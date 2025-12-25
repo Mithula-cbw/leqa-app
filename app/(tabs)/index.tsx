@@ -1,83 +1,35 @@
-// Leqa © 2025 Mithula Chanthuka
-
+import BottomSheet from "@/components/ui/BottomSheet";
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
-import { useUser } from "@/contexts/UserContext";
+import { View, Text, Button, Modal, StyleSheet } from "react-native";
 
 export default function Index() {
-  const { user, saveUser, loading } = useUser();
-  const [nameInput, setNameInput] = useState("");
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Welcome to Leqa</Text>
-        <Text style={styles.subtitle}>What should we call you?</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your name"
-          value={nameInput}
-          onChangeText={setNameInput}
-        />
-
-        <Button
-          title="Get Started"
-          onPress={() => {
-            if (nameInput.trim()) {
-              saveUser(nameInput.trim());
-            }
-          }}
-        />
-      </View>
-    );
-  }
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Hello, {user.name}!</Text>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <Button title="Open Sheet" onPress={() => setSheetVisible(true)} />
+
+      <BottomSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+      >
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          Hello from the sheet!
+        </Text>
+        <Text>Put any React Node here.</Text>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          Hello from the sheet!
+        </Text>
+        <Text>Put any React Node here.</Text>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          Hello from the sheet!
+        </Text>
+        <Text>Put any React Node here.</Text>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          Hello from the sheet!
+        </Text>
+        <Text>Put any React Node here.</Text>
+      </BottomSheet>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 20,
-  },
-  input: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-});
