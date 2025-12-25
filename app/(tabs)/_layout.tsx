@@ -2,7 +2,7 @@
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Tabs } from "expo-router";
-import { Octicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function RootLayout() {
   const activeTint = useThemeColor({}, "tint");
@@ -15,8 +15,17 @@ export default function RootLayout() {
         headerShown: false,
         tabBarStyle: {
           paddingTop: 5,
-          height: 75,
-        }
+          paddingHorizontal: 10,
+          height: 60,
+          borderRadius: 35,
+          marginBottom: 25,
+          marginHorizontal: 15,
+          backgroundColor: useThemeColor({}, "background-muted"),
+          position: "absolute",
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
       }}
     >
       <Tabs.Screen
@@ -24,8 +33,8 @@ export default function RootLayout() {
         options={{
           headerShown: false,
           tabBarIcon: ({ focused, color }) => (
-            <Octicons
-              name={focused ? "home-fill" : "home"}
+            <Ionicons
+              name={focused ? "home-sharp" : "home-outline"}
               size={24}
               color={color}
             />
@@ -34,17 +43,45 @@ export default function RootLayout() {
         }}
       />
       <Tabs.Screen
-        name="about"
+        name="products"
         options={{
           headerShown: false,
           tabBarIcon: ({ focused, color }) => (
-            <Octicons
-              name={focused ? "bookmark-filled" : "bookmark"}
+            <Ionicons
+              name={focused ? "storefront-sharp" : "storefront-outline"}
               size={24}
               color={color}
             />
           ),
-          tabBarLabel: "About",
+          tabBarLabel: "Products",
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "podium-sharp" : "podium-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+          tabBarLabel: "Analytics",
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "settings-sharp" : "settings-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+          tabBarLabel: "Settings",
         }}
       />
     </Tabs>

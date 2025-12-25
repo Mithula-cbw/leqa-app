@@ -3,7 +3,7 @@
 import { ThemedView } from "@/components/themed-view";
 import { Text } from "react-native";
 
-const About = () => {
+const Products = () => {
   return (
     <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <Text>I am a App Dev</Text>
@@ -11,4 +11,4 @@ const About = () => {
   );
 };
 
-export default About;
+export default Products;
