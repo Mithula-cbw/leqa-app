@@ -23,6 +23,7 @@ export default function RootLayout() {
           backgroundColor: useThemeColor({}, "background-muted"),
           position: "absolute",
           borderTopWidth: 0,
+          opacity: 0.96,
           elevation: 0,
           shadowOpacity: 0,
         },
