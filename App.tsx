@@ -1,27 +1,33 @@
 import "./global.css";
+import "./i18n";
 import React from "react";
-import { Text, View, StatusBar } from "react-native";
+import { Text, View, StatusBar, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LanguageProvider, useLanguage } from "./src/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 
-export default function App() {
+const Home = () => {
+  const { t } = useTranslation();
+  const { isEng, changeLanguage } = useLanguage();
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar barStyle="dark-content" />
-
-      <View className="flex-1 justify-center items-center p-6">
-        {/* Our themed card */}
-        <View className="bg-surface p-8 rounded-[32px] shadow-xl border border-slate-100 items-center">
-          <Text className="text-primary text-sm font-bold uppercase tracking-widest mb-2">
-            Saman's Farm
-          </Text>
-          <Text className="text-textMain text-3xl font-bold text-center">
-            Hello World!
-          </Text>
-          <Text className="text-slate-500 mt-2 text-center">
-            Your offline-first management app is ready.
-          </Text>
-        </View>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>{t("test")}</Text>
+        <Button
+          title={isEng ? "Switch to Sinhala" : "Switch to English"}
+          onPress={() => changeLanguage(isEng ? "si" : "en")}
+        />
       </View>
     </SafeAreaView>
+  );
+};
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <Home />
+    </LanguageProvider>
   );
 }
