@@ -2,17 +2,51 @@
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Tabs } from "expo-router";
+import { Octicons } from "@expo/vector-icons";
 
 export default function RootLayout() {
-   const backgroundColor = useThemeColor({}, 'tint');
+  const activeTint = useThemeColor({}, "tint");
+  const inactiveTint = useThemeColor({}, "tabIconDefault");
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: backgroundColor,
+        tabBarActiveTintColor: activeTint,
+        tabBarInactiveTintColor: inactiveTint,
+        headerShown: false,
+        tabBarStyle: {
+          paddingTop: 5,
+          height: 75,
+        }
       }}
     >
-      <Tabs.Screen name="index" options={{ headerShown: false }} />
-      <Tabs.Screen name="about" options={{ headerShown: false }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ focused, color }) => (
+            <Octicons
+              name={focused ? "home-fill" : "home"}
+              size={24}
+              color={color}
+            />
+          ),
+          tabBarLabel: "Home",
+        }}
+      />
+      <Tabs.Screen
+        name="about"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ focused, color }) => (
+            <Octicons
+              name={focused ? "bookmark-filled" : "bookmark"}
+              size={24}
+              color={color}
+            />
+          ),
+          tabBarLabel: "About",
+        }}
+      />
     </Tabs>
   );
 }
