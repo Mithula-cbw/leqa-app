@@ -1,3 +1,5 @@
+// Leqa © 2025 Mithula Chanthuka
+
 import React from "react";
 import {
   View,

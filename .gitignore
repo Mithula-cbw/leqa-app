@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 .vscode/
+_insp/
 
 # Expo
 .expo/
