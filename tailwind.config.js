@@ -6,8 +6,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        test: "#ff0000",        // Red for testing
+
         primary: "#22c55e",    
-        background: "#f8fafc", 
+        background: "#ffffff", // Black
         surface: "#ffffff",    // Card background
         textMain: "#0f172a",   // Dark slate
       },
