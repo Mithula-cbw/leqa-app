@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { Button, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import React from "react";
 import { ThemedView } from "@/components/shared";
 import { HomeHeader, HomeHero } from "@/features/home";
@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    paddingHorizontal: 10,
+    paddingHorizontal: 2,
     paddingTop: 20,
   },
 });

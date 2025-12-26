@@ -1,12 +1,12 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { HeroCard, HeroScroll } from "@/components/home";
+import { HeroCardOne, HeroCardTwo, HeroScroll } from "@/components/home";
 
 const HomeHero = () => {
   return (
     <HeroScroll>
-      <HeroCard />
-      <HeroCard />
+      <HeroCardOne />
+      <HeroCardTwo />
     </HeroScroll>
   );
 };

@@ -4,26 +4,35 @@ import { StyleSheet } from "react-native";
 import { useUser } from "@/contexts/UserContext";
 import SkeletonBox from "@/components/ui/SkeletonBox";
 import { ThemedText, ThemedView } from "@/components/shared";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 const HomeHeader = () => {
   const { user } = useUser();
+  const titleColr = useThemeColor({}, "text-title");
+  const subTitleColr = useThemeColor({}, "text-subtitle");
 
-  const limitWords = (text: string, maxWords = 2) => {
-    return text.split(" ").slice(0, maxWords).join(" ");
-  };
+  const firstName = user?.name ? user.name.split(" ")[0] : "";
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="default" style={styles.greeting}>
-        Hello,
-      </ThemedText>
-
       {!user ? (
-        <SkeletonBox height={40} width={"70%"} />
+        <SkeletonBox height={60} width={"80%"} />
       ) : (
-        <ThemedText type="title" numberOfLines={1}>
-          {limitWords(user.name, 2)}
-        </ThemedText>
+        <>
+          <ThemedText
+            type="title"
+            numberOfLines={1}
+            style={{ color: titleColr }}
+          >
+            Hi, {firstName}
+          </ThemedText>
+          <ThemedText
+            type="default"
+            style={[styles.subtitle, { color: subTitleColr, fontSize: 16 }]}
+          >
+            Welcome back to your dashboard
+          </ThemedText>
+        </>
       )}
     </ThemedView>
   );
@@ -39,7 +48,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     justifyContent: "center",
   },
-  greeting: {
-    marginBottom: 4,
+  subtitle: {
+    marginTop: 4,
+    opacity: 0.7,
   },
 });

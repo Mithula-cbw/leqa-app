@@ -1,13 +1,11 @@
-
-
 import React from "react";
 import { StyleSheet, View, ImageBackground } from "react-native";
 
-const HeroCard = () => {
+const HeroCardTwo = () => {
   return (
     <View>
       <ImageBackground
-        source={require("../../assets/images/light-bg.jpg")}
+        source={require("../../assets/images/hero-2.jpg")}
         style={[styles.imageBackground]}
         imageStyle={{ borderRadius: 16 }}
       >
@@ -26,6 +24,8 @@ const HeroCard = () => {
     </View>
   );
 };
+
+export default HeroCardTwo;
 
 const styles = StyleSheet.create({
   imageBackground: {
@@ -69,5 +69,3 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 });
-
-export default HeroCard;
