@@ -14,7 +14,7 @@ import {
   ToastAndroid,
   Platform,
 } from "react-native";
-import { ThemedView } from "../themed-view";
+import { ThemedView } from "../shared";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 

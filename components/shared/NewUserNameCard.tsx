@@ -1,7 +1,7 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import { TouchableOpacity, StyleSheet, View, TextInput } from "react-native";
-import { ThemedText } from "../themed-text";
+import ThemedText from "./themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface Props {

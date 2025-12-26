@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { ThemedView } from "@/components/themed-view";
+import { ThemedView } from "@/components/shared";
 import { useUser } from "@/contexts/UserContext";
 import { Button, Text } from "react-native";
 

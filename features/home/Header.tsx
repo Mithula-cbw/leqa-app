@@ -1,10 +1,9 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import { StyleSheet } from "react-native";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { useUser } from "@/contexts/UserContext";
 import SkeletonBox from "@/components/ui/SkeletonBox";
+import { ThemedText, ThemedView } from "@/components/shared";
 
 const HomeHeader = () => {
   const { user } = useUser();

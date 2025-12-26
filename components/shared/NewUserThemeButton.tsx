@@ -8,8 +8,8 @@ import {
   ImageBackground,
 } from "react-native";
 import React, { useRef } from "react";
-import { ThemedText } from "../themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import ThemedText from "./themed-text";
 
 interface Props {
   mode: "light" | "dark";

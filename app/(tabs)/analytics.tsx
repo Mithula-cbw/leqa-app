@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { ThemedView } from "@/components/themed-view";
+import { ThemedView } from "@/components/shared";
 import { Text } from "react-native";
 
 const Analytics = () => {

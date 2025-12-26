@@ -3,9 +3,8 @@
 import { useUser } from "@/contexts/UserContext";
 import { StyleSheet, Animated } from "react-native";
 import { useState, useRef } from "react";
-import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/contexts/ThemeContext";
-import { NewUserAppearanceCard, NewUserNameCard } from "@/components/shared";
+import { NewUserAppearanceCard, NewUserNameCard, ThemedView } from "@/components/shared";
 
 const NewUserSheet = () => {
   const { saveUser } = useUser();

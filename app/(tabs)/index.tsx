@@ -1,9 +1,9 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import { StyleSheet } from "react-native";
-import { ThemedView } from "@/components/themed-view";
-import HomeHeader from "@/features/home/HomeHeader";
+import HomeHeader from "@/features/home/Header";
 import React from "react";
+import { ThemedView } from "@/components/shared";
 
 export default function Index() {
   return (
