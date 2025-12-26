@@ -106,6 +106,7 @@ export default function RootLayout() {
         onOverlayClose={false}
         showCloseButton={false}
         onClose={() => setSheetVisible(false)}
+        animationDuration={400}
       >
         <NewUserSheet />
       </BottomSheet>

@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,13 @@ import {
   ViewStyle,
   TextStyle,
   Modal,
+  Animated,
+  Easing,
 } from "react-native";
+import { ThemedView } from "../themed-view";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
-interface BottomSheetProps {
+export interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
   sheetTitle?: string;
@@ -22,6 +26,7 @@ interface BottomSheetProps {
   sheetStyle?: ViewStyle;
   closeButtonStyle?: ViewStyle;
   closeTextStyle?: TextStyle;
+  animationDuration?: number;
 }
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -35,26 +40,74 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   sheetStyle,
   closeButtonStyle,
   closeTextStyle,
+  animationDuration = 250,
 }) => {
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(300)).current;
+  const bgColor = useThemeColor({}, "background");
+
+  const [renderModal, setRenderModal] = useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      setRenderModal(true);
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: animationDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetTranslateY, {
+          toValue: 0,
+          duration: animationDuration,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: animationDuration,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetTranslateY, {
+          toValue: 300,
+          duration: animationDuration,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => setRenderModal(false));
+    }
+  }, [visible, animationDuration]);
+
+  if (!renderModal) return null;
+
   return (
     <Modal
-      visible={visible}
+      visible={renderModal}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
         {onOverlayClose && (
           <TouchableOpacity
-            style={styles.overlay}
+            style={StyleSheet.absoluteFill}
             activeOpacity={1}
             onPress={onClose}
           />
         )}
-        <View style={[styles.sheet, sheetStyle]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            sheetStyle,
+            { transform: [{ translateY: sheetTranslateY }], backgroundColor: bgColor },
+          ]}
+        >
           {showCloseButton && (
-            <View style={styles.sheetHeader}>
-              <View
+            <ThemedView style={styles.sheetHeader}>
+              <ThemedView
                 style={[
                   styles.headerContent,
                   {
@@ -66,14 +119,14 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                 ]}
               >
                 {(sheetTitle || sheetSubtitle) && (
-                  <View style={styles.headerTextWrapper}>
+                  <ThemedView style={styles.headerTextWrapper}>
                     {sheetTitle && (
                       <Text style={styles.sheetTitle}>{sheetTitle}</Text>
                     )}
                     {sheetSubtitle && (
                       <Text style={styles.sheetSubtitle}>{sheetSubtitle}</Text>
                     )}
-                  </View>
+                  </ThemedView>
                 )}
                 {showCloseButton && (
                   <TouchableOpacity
@@ -83,12 +136,12 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                     <Text style={[styles.closeText, closeTextStyle]}>×</Text>
                   </TouchableOpacity>
                 )}
-              </View>
-            </View>
+              </ThemedView>
+            </ThemedView>
           )}
           {children}
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -103,7 +156,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   sheet: {
-    backgroundColor: "white",
     borderTopRightRadius: 20,
     borderTopLeftRadius: 20,
     paddingHorizontal: 20,
