@@ -3,6 +3,16 @@
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemeMode } from "@/contexts/ThemeContext";
+import NewUserThemeButton from "./NewUserThemeButton";
+
+interface Props {
+  theme: ThemeMode;
+  setTheme: (v: ThemeMode) => void;
+  onBack: () => void;
+  onFinish: () => void;
+  tintColor: string;
+  borderColor: string;
+}
 
 const NewUserAppearanceCard = ({
   theme,
@@ -11,60 +21,50 @@ const NewUserAppearanceCard = ({
   onFinish,
   tintColor,
   borderColor,
-}: {
-  theme: ThemeMode;
-  setTheme: (v: ThemeMode) => void;
-  onBack: () => void;
-  onFinish: () => void;
-  tintColor: string;
-  borderColor: string;
-}) => {
-  const ThemeOption = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: typeof theme;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.themeButton,
-        { borderColor: theme === value ? tintColor : borderColor },
-      ]}
-      onPress={() => setTheme(value)}
-    >
-      <ThemedText style={{ color: theme === value ? tintColor : undefined }}>
-        {label}
-      </ThemedText>
-    </TouchableOpacity>
-  );
-
+}: Props) => {
   return (
-    <View>
+    <View style={styles.mainContainer}>
       <ThemedText style={styles.title}>Appearance</ThemedText>
       <ThemedText style={styles.subtitle}>
         How would you like the app to look?
       </ThemedText>
-
       <View style={styles.themeContainer}>
-        <ThemeOption label="Light" value="light" />
-        <ThemeOption label="Dark" value="dark" />
-        <ThemeOption label="System" value="system" />
+        <NewUserThemeButton
+          mode="light"
+          selected={theme === "light"}
+          onPress={() => setTheme("light")}
+        />
+
+        <NewUserThemeButton
+          mode="dark"
+          selected={theme === "dark"}
+          onPress={() => setTheme("dark")}
+        />
       </View>
 
       <View style={styles.buttonRow}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <ThemedText style={{ color: borderColor }}>Back</ThemedText>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={[
             styles.primaryButton,
-            { backgroundColor: tintColor, flex: 1 },
+            { backgroundColor: tintColor, width: "100%" },
           ]}
           onPress={onFinish}
         >
-          <ThemedText style={styles.buttonText}>Get Started</ThemedText>
+          <ThemedText
+            style={[
+              styles.buttonText,
+              { color: theme === "light" ? "#fff" : "#000" },
+            ]}
+          >
+            Get Started
+          </ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onBack}
+          style={[styles.backButton, { width: "100%", alignItems: "center" }]}
+        >
+          <ThemedText style={{ color: borderColor }}>Back</ThemedText>
         </TouchableOpacity>
       </View>
     </View>
@@ -74,10 +74,8 @@ const NewUserAppearanceCard = ({
 export default NewUserAppearanceCard;
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 20,
-    paddingHorizontal: 2,
-    overflow: "hidden",
+  mainContainer: {
+    width: "100%",
   },
   title: {
     fontSize: 22,
@@ -89,16 +87,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     opacity: 0.7,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 20,
-  },
   themeContainer: {
+    paddingHorizontal: 5,
     flexDirection: "row",
-    gap: 10,
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 12,
     marginBottom: 30,
   },
   themeButton: {
@@ -110,8 +104,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "stretch",
+    paddingHorizontal: 5,
     gap: 15,
   },
   primaryButton: {
@@ -123,7 +119,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   buttonText: {
-    color: "#FFF",
     fontWeight: "600",
     fontSize: 16,
   },
