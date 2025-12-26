@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   TextStyle,
   Modal,
   Animated,
+  Dimensions,
   Easing,
 } from "react-native";
 import { ThemedView } from "../themed-view";
-import { useThemeColor } from "@/hooks/use-theme-color";
 
-export interface BottomSheetProps {
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
+interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
   sheetTitle?: string;
@@ -40,108 +42,120 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   sheetStyle,
   closeButtonStyle,
   closeTextStyle,
-  animationDuration = 250,
+  animationDuration = 300,
 }) => {
-  const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const sheetTranslateY = useRef(new Animated.Value(300)).current;
-  const bgColor = useThemeColor({}, "background");
-
-  const [renderModal, setRenderModal] = useState(visible);
+  const fadeAnim = useRef(new Animated.Value(0)).current; // For overlay opacity
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current; // For sheet position
 
   useEffect(() => {
     if (visible) {
-      setRenderModal(true);
       Animated.parallel([
-        Animated.timing(overlayOpacity, {
+        Animated.timing(fadeAnim, {
           toValue: 1,
           duration: animationDuration,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.timing(sheetTranslateY, {
+        Animated.timing(slideAnim, {
           toValue: 0,
           duration: animationDuration,
-          easing: Easing.out(Easing.ease),
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
     } else {
+      // Close animation
       Animated.parallel([
-        Animated.timing(overlayOpacity, {
+        Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: animationDuration,
+          duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(sheetTranslateY, {
-          toValue: 300,
-          duration: animationDuration,
-          easing: Easing.in(Easing.ease),
+        Animated.timing(slideAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
           useNativeDriver: true,
         }),
-      ]).start(() => setRenderModal(false));
+      ]).start();
     }
-  }, [visible, animationDuration]);
-
-  if (!renderModal) return null;
+  }, [visible]);
 
   return (
     <Modal
-      visible={renderModal}
+      visible={visible}
       transparent
-      animationType="none"
       onRequestClose={onClose}
+      animationType="none"
     >
-      <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
-        {onOverlayClose && (
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-        )}
+      <View style={styles.container}>
+        {/* Animated Overlay */}
         <Animated.View
           style={[
-            styles.sheet,
-            sheetStyle,
-            { transform: [{ translateY: sheetTranslateY }], backgroundColor: bgColor },
+            styles.overlay,
+            {
+              opacity: fadeAnim,
+            },
           ]}
         >
-          {showCloseButton && (
-            <ThemedView style={styles.sheetHeader}>
-              <ThemedView
-                style={[
-                  styles.headerContent,
-                  {
-                    justifyContent:
-                      sheetTitle || sheetSubtitle
-                        ? "space-between"
-                        : "flex-end",
-                  },
-                ]}
-              >
-                {(sheetTitle || sheetSubtitle) && (
-                  <ThemedView style={styles.headerTextWrapper}>
-                    {sheetTitle && (
-                      <Text style={styles.sheetTitle}>{sheetTitle}</Text>
-                    )}
-                    {sheetSubtitle && (
-                      <Text style={styles.sheetSubtitle}>{sheetSubtitle}</Text>
-                    )}
-                  </ThemedView>
-                )}
-                {showCloseButton && (
-                  <TouchableOpacity
-                    style={[styles.closeButton, closeButtonStyle]}
-                    onPress={onClose}
-                  >
-                    <Text style={[styles.closeText, closeTextStyle]}>×</Text>
-                  </TouchableOpacity>
-                )}
-              </ThemedView>
-            </ThemedView>
+          {onOverlayClose && (
+            <TouchableOpacity
+              style={styles.flexFill}
+              activeOpacity={1}
+              onPress={onClose}
+            />
           )}
-          {children}
         </Animated.View>
-      </Animated.View>
+
+        {/* Animated Sheet */}
+        <Animated.View
+          style={[
+            styles.sheetContainer,
+            {
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <ThemedView style={[styles.sheet, sheetStyle]}>
+            {(showCloseButton || sheetTitle || sheetSubtitle) && (
+              <ThemedView style={styles.sheetHeader}>
+                <ThemedView
+                  style={[
+                    styles.headerContent,
+                    {
+                      justifyContent:
+                        sheetTitle || sheetSubtitle
+                          ? "space-between"
+                          : "flex-end",
+                    },
+                  ]}
+                >
+                  {(sheetTitle || sheetSubtitle) && (
+                    <ThemedView style={styles.headerTextWrapper}>
+                      {sheetTitle && (
+                        <Text style={styles.sheetTitle}>{sheetTitle}</Text>
+                      )}
+                      {sheetSubtitle && (
+                        <Text style={styles.sheetSubtitle}>
+                          {sheetSubtitle}
+                        </Text>
+                      )}
+                    </ThemedView>
+                  )}
+                  {showCloseButton && (
+                    <TouchableOpacity
+                      style={[styles.closeButton, closeButtonStyle]}
+                      onPress={onClose}
+                    >
+                      <Text style={[styles.closeText, closeTextStyle]}>×</Text>
+                    </TouchableOpacity>
+                  )}
+                </ThemedView>
+              </ThemedView>
+            )}
+            {children}
+          </ThemedView>
+        </Animated.View>
+      </View>
     </Modal>
   );
 };
@@ -149,10 +163,19 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 export default BottomSheet;
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
+  },
+  flexFill: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  sheetContainer: {
+    width: "100%",
     paddingHorizontal: 5,
   },
   sheet: {
@@ -161,7 +184,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 60,
     paddingTop: 5,
-    maxHeight: "70%",
+    maxHeight: SCREEN_HEIGHT * 0.7,
   },
   sheetHeader: {
     marginBottom: 20,
@@ -169,7 +192,6 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
   },
   headerTextWrapper: {
     flexDirection: "column",
