@@ -6,31 +6,37 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SQLiteProvider } from "expo-sqlite";
 import { UserProvider } from "@/contexts/UserContext";
+import { ThemeProviderApp, useTheme } from "@/contexts/ThemeContext";
 import { initializeDatabase } from "@/db/schema";
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
+function NavigationThemeWrapper({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme, loading } = useTheme();
+
+  if (loading) return null;
+
+  return (
+    <ThemeProvider value={resolvedTheme === "dark" ? DarkTheme : DefaultTheme}>
+      {children}
+    </ThemeProvider>
+  );
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <SQLiteProvider databaseName="leqa_app.db" onInit={initializeDatabase}>
       <UserProvider>
-        <SafeAreaProvider>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-          </ThemeProvider>
-        </SafeAreaProvider>
+        <ThemeProviderApp>
+          <SafeAreaProvider>
+            <NavigationThemeWrapper>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+            </NavigationThemeWrapper>
+          </SafeAreaProvider>
+        </ThemeProviderApp>
       </UserProvider>
     </SQLiteProvider>
   );
