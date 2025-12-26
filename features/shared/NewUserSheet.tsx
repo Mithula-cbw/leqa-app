@@ -70,8 +70,6 @@ const NewUserSheet = () => {
             name={name}
             onChangeName={setName}
             onNext={() => animateToStep(2)}
-            tintColor={tintColor}
-            borderColor={borderColor}
           />
         ) : (
           <NewUserAppearanceCard
@@ -79,8 +77,6 @@ const NewUserSheet = () => {
             setTheme={setTheme}
             onBack={() => animateToStep(1)}
             onFinish={handleFinalize}
-            tintColor={tintColor}
-            borderColor={borderColor}
           />
         )}
       </Animated.View>

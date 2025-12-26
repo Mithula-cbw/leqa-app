@@ -4,14 +4,13 @@ import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { ThemedText } from "../themed-text";
 import { ThemeMode } from "@/contexts/ThemeContext";
 import NewUserThemeButton from "./NewUserThemeButton";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface Props {
   theme: ThemeMode;
   setTheme: (v: ThemeMode) => void;
   onBack: () => void;
   onFinish: () => void;
-  tintColor: string;
-  borderColor: string;
 }
 
 const NewUserAppearanceCard = ({
@@ -19,9 +18,10 @@ const NewUserAppearanceCard = ({
   setTheme,
   onBack,
   onFinish,
-  tintColor,
-  borderColor,
 }: Props) => {
+  const tintColor = useThemeColor({}, "tint");
+  const textMuted = useThemeColor({}, "text-muted");
+
   return (
     <View style={styles.mainContainer}>
       <ThemedText style={styles.title}>Appearance</ThemedText>
@@ -64,7 +64,7 @@ const NewUserAppearanceCard = ({
           onPress={onBack}
           style={[styles.backButton, { width: "100%", alignItems: "center" }]}
         >
-          <ThemedText style={{ color: borderColor }}>Back</ThemedText>
+          <ThemedText style={{ color: textMuted }}>Back</ThemedText>
         </TouchableOpacity>
       </View>
     </View>

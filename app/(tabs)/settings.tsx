@@ -1,12 +1,17 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import { ThemedView } from "@/components/themed-view";
-import { Text } from "react-native";
+import { useUser } from "@/contexts/UserContext";
+import { Button, Text } from "react-native";
 
 const Settings = () => {
+  const { deleteUser } = useUser();
   return (
-    <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+    <ThemedView
+      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+    >
       <Text>Settings Here</Text>
+      <Button title="delete User" onPress={() => deleteUser()} />
     </ThemedView>
   );
 };

@@ -2,22 +2,20 @@
 
 import { TouchableOpacity, StyleSheet, View, TextInput } from "react-native";
 import { ThemedText } from "../themed-text";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface Props {
   name: string;
   onChangeName: (v: string) => void;
   onNext: () => void;
-  tintColor: string;
-  borderColor: string;
 }
 
-const NewUserNameCard = ({
-  name,
-  onChangeName,
-  onNext,
-  tintColor,
-  borderColor,
-}: Props) => {
+const NewUserNameCard = ({ name, onChangeName, onNext }: Props) => {
+  const tintColor = useThemeColor({}, "tint");
+  const tintMutedColor = useThemeColor({}, "tint-muted");
+  const text = useThemeColor({}, "text");
+  const textMuted = useThemeColor({}, "text-muted");
+
   return (
     <View>
       <ThemedText style={styles.title}>Welcome 👋</ThemedText>
@@ -27,17 +25,17 @@ const NewUserNameCard = ({
 
       <TextInput
         placeholder="Your name"
-        placeholderTextColor={borderColor}
+        placeholderTextColor={textMuted}
         value={name}
         onChangeText={onChangeName}
         autoFocus
-        style={[styles.input, { borderColor }]}
+        style={[styles.input, { borderColor: textMuted, color: text }]}
       />
 
       <TouchableOpacity
         style={[
           styles.primaryButton,
-          { backgroundColor: name.trim() ? tintColor : borderColor },
+          { backgroundColor: name.trim() ? tintColor : tintMutedColor },
         ]}
         onPress={onNext}
         disabled={!name.trim()}
