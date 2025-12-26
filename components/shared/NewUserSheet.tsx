@@ -28,7 +28,6 @@ const NewUserSheet = () => {
   const borderColor = useThemeColor({}, "tabIconDefault");
 
   const animateToStep = (nextStep: number) => {
-    // 1. Fade out and slide slightly
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 0,
@@ -36,18 +35,15 @@ const NewUserSheet = () => {
         useNativeDriver: true,
       }),
       Animated.timing(translateX, {
-        toValue: nextStep > step ? -20 : 20, // Slide left if going forward, right if back
+        toValue: nextStep > step ? -20 : 20,
         duration: 150,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // 2. Change the content
       setStep(nextStep);
 
-      // 3. Reset position for incoming content
       translateX.setValue(nextStep > step ? 20 : -20);
 
-      // 4. Fade in and slide to center
       Animated.parallel([
         Animated.timing(opacity, {
           toValue: 1,
@@ -97,7 +93,7 @@ const NewUserSheet = () => {
         }}
       >
         {step === 1 ? (
-          /* Step 1: Name Input */
+          /* Step 2 */
           <View>
             <ThemedText style={styles.title}>Welcome 👋</ThemedText>
             <ThemedText style={styles.subtitle}>
@@ -125,7 +121,7 @@ const NewUserSheet = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          /* Step 2: Theme Selection */
+          /* Step 2 */
           <View>
             <ThemedText style={styles.title}>Appearance</ThemedText>
             <ThemedText style={styles.subtitle}>
@@ -169,7 +165,7 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 20,
     paddingHorizontal: 2,
-    overflow: "hidden", // Prevents content from peeking during animation
+    overflow: "hidden",
   },
   title: {
     fontSize: 22,
