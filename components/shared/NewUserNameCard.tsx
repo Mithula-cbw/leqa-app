@@ -16,6 +16,24 @@ const NewUserNameCard = ({ name, onChangeName, onNext }: Props) => {
   const text = useThemeColor({}, "text");
   const textMuted = useThemeColor({}, "text-muted");
 
+  const sanitizeName = (value: string) => {
+    return value.replace(/[^a-zA-Z\s]/g, "");
+  };
+
+  const formatNameForSave = (value: string) => {
+    return value
+      .replace(/[^a-zA-Z\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const handleNext = () => {
+    const finalName = formatNameForSave(name);
+    onChangeName(finalName);
+    onNext();
+  };
+
   return (
     <View>
       <ThemedText style={styles.title}>Welcome 👋</ThemedText>
@@ -27,7 +45,7 @@ const NewUserNameCard = ({ name, onChangeName, onNext }: Props) => {
         placeholder="Your name"
         placeholderTextColor={textMuted}
         value={name}
-        onChangeText={onChangeName}
+        onChangeText={(value) => onChangeName(sanitizeName(value))}
         autoFocus
         style={[styles.input, { borderColor: textMuted, color: text }]}
       />
@@ -37,7 +55,7 @@ const NewUserNameCard = ({ name, onChangeName, onNext }: Props) => {
           styles.primaryButton,
           { backgroundColor: name.trim() ? tintColor : tintMutedColor },
         ]}
-        onPress={onNext}
+        onPress={handleNext}
         disabled={!name.trim()}
       >
         <ThemedText style={styles.buttonText}>Next</ThemedText>

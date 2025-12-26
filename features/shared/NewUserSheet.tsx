@@ -5,7 +5,6 @@ import { StyleSheet, Animated } from "react-native";
 import { useState, useRef } from "react";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { NewUserAppearanceCard, NewUserNameCard } from "@/components/shared";
 
 const NewUserSheet = () => {
@@ -17,9 +16,6 @@ const NewUserSheet = () => {
 
   const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
-
-  const tintColor = useThemeColor({}, "tint");
-  const borderColor = useThemeColor({}, "tabIconDefault");
 
   const animateToStep = (nextStep: number) => {
     Animated.parallel([
