@@ -4,7 +4,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useUser } from "@/contexts/UserContext";
-import NewUserSheet from "@/components/shared/NewUserSheet";
+import NewUserSheet from "@/features/shared/NewUserSheet";
 import { useEffect, useState } from "react";
 import BottomSheet from "@/components/ui/BottomSheet";
 
