@@ -25,7 +25,7 @@ const HomeHeader = () => {
         </ThemedView>
       ) : (
         <ThemedView style={styles.row}>
-          <Avatar size={72} />
+          <Avatar size={68} />
 
           <ThemedView style={styles.textContainer}>
             <ThemedText

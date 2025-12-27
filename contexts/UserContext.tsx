@@ -70,7 +70,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (!user || user.id === undefined) return;
 
     try {
-      await db.runAsync("UPDATE users SET image = ? WHERE id = ?");
+      await db.runAsync("UPDATE users SET image = ? WHERE id = ?", [
+        uri,
+        user.id,
+      ]);
 
       setUser((prev) => (prev ? { ...prev, image: uri } : null));
     } catch (error) {

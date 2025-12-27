@@ -1,79 +1,102 @@
-// Leqa © 2025 Mithula Chanthuka
-
 import React from "react";
-import { StyleSheet, View, Text, Image } from "react-native";
+import { StyleSheet, View, Text, Image, Pressable } from "react-native";
 import { useUser } from "@/contexts/UserContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useRouter } from "expo-router";
 
 interface AvatarProps {
   size?: number;
 }
 
+const GAP = 2;
+
 const Avatar = ({ size = 48 }: AvatarProps) => {
   const { user } = useUser();
+  const router = useRouter();
 
   const tintColor = useThemeColor({}, "tint");
   const bgColor = useThemeColor({}, "background-muted");
+  const borderColor = useThemeColor({}, "background-seconary");
 
   const getInitials = () => {
     if (!user?.name) return "U";
-
-    // Gets first letter of first and last name, or just first letter
     const parts = user.name.trim().split(" ");
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return parts[0][0].toUpperCase();
+    return parts.length > 1
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : parts[0][0].toUpperCase();
   };
 
-  const dynamicStyles = {
-    container: {
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-    },
-    text: {
-      fontSize: size * 0.4,
-    },
-  };
-
-  if (user?.image) {
-    return (
-      <Image
-        source={{ uri: user.image }}
-        style={[styles.base, dynamicStyles.container]}
-      />
-    );
-  }
+  const outerSize = size + GAP * 2;
 
   return (
-    <View
+    <Pressable
+      onPress={() => router.push("/settings")}
+      hitSlop={8}
       style={[
-        styles.base,
-        styles.fallback,
-        dynamicStyles.container,
-        { backgroundColor: bgColor },
+        styles.border,
+        {
+          width: outerSize,
+          height: outerSize,
+          borderRadius: outerSize / 2,
+          borderColor,
+        },
       ]}
     >
-      <Text style={[styles.initials, dynamicStyles.text, { color: tintColor }]}>
-        {getInitials()}
-      </Text>
-    </View>
+      {user?.image ? (
+        <Image
+          source={{ uri: user.image }}
+          style={[
+            styles.avatar,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+            },
+          ]}
+        />
+      ) : (
+        <View
+          style={[
+            styles.avatar,
+            styles.fallback,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              backgroundColor: bgColor,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.initials,
+              { fontSize: size * 0.4, color: tintColor },
+            ]}
+          >
+            {getInitials()}
+          </Text>
+        </View>
+      )}
+    </Pressable>
   );
 };
 
 export default Avatar;
 
 const styles = StyleSheet.create({
-  base: {
+  border: {
+    padding: 2,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatar: {
     overflow: "hidden",
     elevation: 2,
   },
   fallback: {
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
   },
   initials: {
     fontWeight: "700",

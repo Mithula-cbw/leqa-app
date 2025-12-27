@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { ThemedView } from "@/components/shared";
+import { ProfileImagePicker, ThemedView } from "@/components/shared";
 import { useUser } from "@/contexts/UserContext";
 import { Button, Text } from "react-native";
 
@@ -12,6 +12,7 @@ const Settings = () => {
     >
       <Text>Settings Here</Text>
       <Button title="delete User" onPress={() => deleteUser()} />
+      <ProfileImagePicker />
     </ThemedView>
   );
 };
