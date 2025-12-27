@@ -1,18 +1,40 @@
-// Leqa © 2025 Mithula Chanthuka
-
 import { SQLiteDatabase } from "expo-sqlite";
 
 export const initializeDatabase = async (db: SQLiteDatabase) => {
   try {
+    await db.execAsync(`PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;`);
+
     await db.execAsync(`
-      PRAGMA journal_mode = WAL;
+      -- Users Table
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         name TEXT NOT NULL,
         image TEXT
       );
+
+      -- Products Table (The Blueprint)
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        weight TEXT,
+        default_shelf_life INTEGER, -- days until expiry
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+      -- StockItems Table (The individual batches)
+      CREATE TABLE IF NOT EXISTS stock_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_number INTEGER,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        expiry_date DATE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
     `);
-    console.log("Database initialized successfully.");
+
+    console.log("Database tables and relations initialized.");
   } catch (error) {
     console.error("Error initializing database:", error);
   }

@@ -1,23 +1,39 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, FlatList } from "react-native";
 import React from "react";
 import { ThemedView } from "@/components/shared";
 import { FloatingActionButtons, HomeHeader, HomeHero } from "@/features/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useStock } from "@/contexts/StockContext";
 
 export default function Index() {
   const bgSecondary = useThemeColor({}, "background-seconary");
+  const { products, loading } = useStock();
+
   return (
     <ThemedView style={styles.container}>
       <HomeHeader />
       <HomeHero />
+
+      {/* content */}
       <View style={[styles.content, { backgroundColor: bgSecondary }]}>
-        <FloatingActionButtons
-          onAdd={() => console.log("Primary FAB")}
-          onRemove={() => console.log("Secondary FAB")}
+        <FlatList
+          data={products}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listPadding}
+          renderItem={({ item }) => (
+            <View style={styles.productCard}>
+              
+            </View>
+          )}
         />
       </View>
+
+      <FloatingActionButtons
+        onAdd={() => console.log("Add Product")}
+        onRemove={() => console.log("Remove/Reduce Stock")}
+      />
     </ThemedView>
   );
 }
@@ -25,9 +41,6 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingHorizontal: 2,
     paddingTop: 20,
   },
   content: {
@@ -35,6 +48,14 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 35,
     borderTopRightRadius: 36,
-    borderTopLeftRadius: 36
+    borderTopLeftRadius: 36,
+    overflow: "hidden",
+  },
+  listPadding: {
+    padding: 20,
+    paddingBottom: 100,
+  },
+  productCard: {
+    
   },
 });

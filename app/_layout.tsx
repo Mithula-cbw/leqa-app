@@ -11,6 +11,7 @@ import { SQLiteProvider } from "expo-sqlite";
 import { UserProvider } from "@/contexts/UserContext";
 import { ThemeProviderApp, useTheme } from "@/contexts/ThemeContext";
 import { initializeDatabase } from "@/db/schema";
+import { StockProvider } from "@/contexts/StockContext";
 
 function NavigationThemeWrapper({ children }: { children: React.ReactNode }) {
   const { resolvedTheme, loading } = useTheme();
@@ -28,15 +29,20 @@ export default function RootLayout() {
   return (
     <SQLiteProvider databaseName="leqa_app.db" onInit={initializeDatabase}>
       <UserProvider>
-        <ThemeProviderApp>
-          <SafeAreaProvider>
-            <NavigationThemeWrapper>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
-            </NavigationThemeWrapper>
-          </SafeAreaProvider>
-        </ThemeProviderApp>
+        <StockProvider>
+          <ThemeProviderApp>
+            <SafeAreaProvider>
+              <NavigationThemeWrapper>
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                </Stack>
+              </NavigationThemeWrapper>
+            </SafeAreaProvider>
+          </ThemeProviderApp>
+        </StockProvider>
       </UserProvider>
     </SQLiteProvider>
   );
