@@ -8,7 +8,7 @@ interface AvatarProps {
   size?: number;
 }
 
-const GAP = 2;
+const GAP = 4;
 
 const Avatar = ({ size = 48 }: AvatarProps) => {
   const { user } = useUser();
@@ -16,7 +16,7 @@ const Avatar = ({ size = 48 }: AvatarProps) => {
 
   const tintColor = useThemeColor({}, "tint");
   const bgColor = useThemeColor({}, "background-muted");
-  const borderColor = useThemeColor({}, "background-seconary");
+  const borderColor = useThemeColor({}, "background-muted");
 
   const getInitials = () => {
     if (!user?.name) return "U";

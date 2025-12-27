@@ -8,7 +8,8 @@ type Props = {
 };
 
 export default function FloatingActionButtons({ onAdd, onRemove }: Props) {
-  const textColor = useThemeColor({}, "text");
+  const textColorAdd = useThemeColor({}, "text");
+  const textColorRemove = useThemeColor({}, "tabIconDefault");
   const bgMuted = useThemeColor({}, "background-muted");
   const accent = useThemeColor({}, "accent");
 
@@ -19,12 +20,15 @@ export default function FloatingActionButtons({ onAdd, onRemove }: Props) {
         style={[styles.fab, styles.add, { backgroundColor: accent }]}
         onPress={onAdd}
       >
-        <Ionicons name="add" size={40} color={textColor} />
+        <Ionicons name="add" size={40} color={textColorAdd} />
       </Pressable>
 
       {/* Remove Button */}
-      <Pressable style={[styles.fab, styles.remove, { backgroundColor: bgMuted }]} onPress={onRemove}>
-        <Ionicons name="remove" size={32} color={textColor} />
+      <Pressable
+        style={[styles.fab, styles.remove, { backgroundColor: bgMuted }]}
+        onPress={onRemove}
+      >
+        <Ionicons name="remove" size={32} color={textColorRemove} />
       </Pressable>
     </View>
   );
@@ -38,7 +42,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   fab: {
-    
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,

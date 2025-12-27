@@ -11,7 +11,7 @@ interface Props {
 }
 
 const NewUserNameCard = ({ name, onChangeName, onNext }: Props) => {
-  const tintColor = useThemeColor({}, "tint");
+  const tintColor = useThemeColor({}, "background-muted");
   const tintMutedColor = useThemeColor({}, "tint-muted");
   const text = useThemeColor({}, "text");
   const textMuted = useThemeColor({}, "text-muted");

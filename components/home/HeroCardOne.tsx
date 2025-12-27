@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     paddingHorizontal: 15,
     justifyContent: "space-between",
-    backgroundColor: "rgba(0,0,0,0.15)",
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
   Content: {
     flex: 1,

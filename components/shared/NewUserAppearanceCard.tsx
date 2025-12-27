@@ -19,7 +19,7 @@ const NewUserAppearanceCard = ({
   onBack,
   onFinish,
 }: Props) => {
-  const tintColor = useThemeColor({}, "tint");
+  const tintColor = useThemeColor({}, "background-muted");
   const textMuted = useThemeColor({}, "text-muted");
 
   return (
