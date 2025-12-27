@@ -67,6 +67,7 @@ export default Avatar;
 const styles = StyleSheet.create({
   base: {
     overflow: "hidden",
+    elevation: 2,
   },
   fallback: {
     justifyContent: "center",

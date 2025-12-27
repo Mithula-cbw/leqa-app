@@ -25,11 +25,11 @@ const HomeHeader = () => {
         </ThemedView>
       ) : (
         <ThemedView style={styles.row}>
-          <Avatar size={50} />
+          <Avatar size={72} />
 
           <ThemedView style={styles.textContainer}>
             <ThemedText
-              type="subtitle"
+              type="title"
               numberOfLines={1}
               style={{ color: titleColor }}
             >
@@ -54,7 +54,7 @@ export default HomeHeader;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    paddingTop: 50,
+    paddingTop: 36,
     paddingBottom: 24,
     paddingHorizontal: 20,
   },
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   textContainer: {
-    marginLeft: 16,
+    marginLeft: 15,
     flex: 1,
     paddingTop: 4,
   },

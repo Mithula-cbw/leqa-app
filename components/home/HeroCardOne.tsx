@@ -1,25 +1,26 @@
-
+// Leqa © 2025 Mithula Chanthuka
 
 import React from "react";
 import { StyleSheet, View, ImageBackground } from "react-native";
+import { ThemedText } from "@/components/shared";
 
-const HeroCardOne = () => {
+interface HeroCardProps {
+  leftAmount: number;
+}
+
+const HeroCardOne = ({ leftAmount }: HeroCardProps) => {
   return (
-    <View>
+    <View style={styles.container}>
       <ImageBackground
-        source={require("../../assets/images/hero-1.jpg")}
-        style={[styles.imageBackground]}
-        imageStyle={{ borderRadius: 16 }}
+        source={require("../../assets/images/hero.jpg")}
+        style={styles.imageBackground}
+        imageStyle={{ borderRadius: 24 }}
       >
         <View style={styles.overlay}>
-          <View style={styles.textContainer}>
-            <View style={styles.subtitleBox}>
-              <View style={styles.subtitleDot} />
-              <View style={styles.subtitleLine} />
-            </View>
-            <View style={styles.titleBox}>
-              <View style={styles.titleLine} />
-            </View>
+          {/* Content */}
+          <View style={styles.Content}>
+            <ThemedText style={styles.title}>Packets Left</ThemedText>
+            <ThemedText style={styles.amountText}>{leftAmount}</ThemedText>
           </View>
         </View>
       </ImageBackground>
@@ -30,46 +31,42 @@ const HeroCardOne = () => {
 export default HeroCardOne;
 
 const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    height: 120,
+  },
   imageBackground: {
-    height: 140,
-    justifyContent: "flex-end",
+    flex: 1,
+    justifyContent: "center",
+    borderRadius: 24
   },
   overlay: {
-    padding: 15,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-  },
-  textContainer: {
-    flexDirection: "column",
-    gap: 4,
-  },
-  subtitleBox: {
+    flex: 1,    
+    borderRadius: 24,
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    alignItems: "flex-end",
+    paddingBottom: 15,
+    paddingHorizontal: 15,
+    justifyContent: "space-between",
+    backgroundColor: "rgba(0,0,0,0.15)",
   },
-  subtitleDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#ddd",
+  Content: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end"
   },
-  subtitleLine: {
-    height: 10,
-    width: 40,
-    backgroundColor: "#ddd",
-    borderRadius: 2,
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#fff",
+    lineHeight: 28,
+    paddingLeft: 2,
   },
-  titleBox: {
-    marginTop: 4,
-  },
-  titleLine: {
-    height: 20,
-    width: 100,
-    backgroundColor: "#fff",
-    borderRadius: 4,
+  amountText: {
+    fontSize: 60,
+    fontWeight: "400",
+    color: "#fff",
+    lineHeight: 56,
   },
 });
-
-

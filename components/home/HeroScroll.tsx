@@ -5,7 +5,7 @@ import { StyleSheet, FlatList, View, Dimensions } from "react-native";
 import { ThemedView } from "../shared";
 
 const { width } = Dimensions.get("window");
-const HERO_HEIGHT = 160;
+const HERO_HEIGHT = 120;
 const CARD_WIDTH = width * 0.80;
 const SPACING = 16;
 const SNAP_INTERVAL = CARD_WIDTH + SPACING;
