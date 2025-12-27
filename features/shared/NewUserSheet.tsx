@@ -1,10 +1,13 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import { useUser } from "@/contexts/UserContext";
-import { StyleSheet, Animated } from "react-native";
+import { StyleSheet, Animated, View } from "react-native";
 import { useState, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { NewUserAppearanceCard, NewUserNameCard, ThemedView } from "@/components/shared";
+import {
+  NewUserAppearanceCard,
+  NewUserNameCard,
+} from "@/components/shared";
 
 const NewUserSheet = () => {
   const { saveUser } = useUser();
@@ -53,7 +56,7 @@ const NewUserSheet = () => {
   };
 
   return (
-    <ThemedView style={[styles.container, { minHeight: 300 }]}>
+    <View style={[styles.container, { minHeight: 300 }]}>
       <Animated.View
         style={{
           opacity,
@@ -75,7 +78,7 @@ const NewUserSheet = () => {
           />
         )}
       </Animated.View>
-    </ThemedView>
+    </View>
   );
 };
 

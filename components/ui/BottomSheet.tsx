@@ -15,6 +15,7 @@ import {
   Platform,
 } from "react-native";
 import { ThemedView } from "../shared";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
@@ -51,6 +52,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   const lastBackPressed = useRef<number>(0);
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipOpacity = useRef(new Animated.Value(0)).current;
+
+  const sheetBg = useThemeColor({}, "sheet")
 
   useEffect(() => {
     if (visible) {
@@ -132,7 +135,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          <ThemedView style={[styles.sheet, sheetStyle]}>
+          <ThemedView style={[styles.sheet, sheetStyle, { backgroundColor: sheetBg}]}>
             {(showCloseButton || sheetTitle || sheetSubtitle) && (
               <ThemedView style={styles.sheetHeader}>
                 <ThemedView
