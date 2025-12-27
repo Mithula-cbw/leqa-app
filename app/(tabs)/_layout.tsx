@@ -37,8 +37,11 @@ export default function RootLayout() {
             position: "absolute",
             borderTopWidth: 0,
             opacity: 0.96,
-            elevation: 0,
-            shadowOpacity: 0,
+            elevation: 1,
+            shadowColor: "#000000a5",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 1,
           },
         }}
       >

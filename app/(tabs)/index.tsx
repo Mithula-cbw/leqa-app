@@ -3,14 +3,17 @@
 import { StyleSheet, View } from "react-native";
 import React from "react";
 import { ThemedView } from "@/components/shared";
-import { HomeHeader, HomeHero } from "@/features/home";
-import { Shadow } from "react-native-shadow-2";
+import { FloatingActionButtons, HomeHeader, HomeHero } from "@/features/home";
 
 export default function Index() {
   return (
     <ThemedView style={styles.container}>
       <HomeHeader />
       <HomeHero />
+      <FloatingActionButtons
+        onAdd={() => console.log("Primary FAB")}
+        onRemove={() => console.log("Secondary FAB")}
+      />
     </ThemedView>
   );
 }
