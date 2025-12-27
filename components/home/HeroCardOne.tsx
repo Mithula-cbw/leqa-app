@@ -31,7 +31,7 @@ export default HeroCardOne;
 
 const styles = StyleSheet.create({
   imageBackground: {
-    height: 200,
+    height: 140,
     justifyContent: "flex-end",
   },
   overlay: {

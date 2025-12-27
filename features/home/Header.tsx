@@ -3,36 +3,47 @@
 import { StyleSheet } from "react-native";
 import { useUser } from "@/contexts/UserContext";
 import SkeletonBox from "@/components/ui/SkeletonBox";
-import { ThemedText, ThemedView } from "@/components/shared";
+import { Avatar, ThemedText, ThemedView } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 const HomeHeader = () => {
   const { user } = useUser();
-  const titleColr = useThemeColor({}, "text-title");
-  const subTitleColr = useThemeColor({}, "text-subtitle");
+  const titleColor = useThemeColor({}, "text-title");
+  const subTitleColor = useThemeColor({}, "text-subtitle");
 
-  const firstName = user?.name ? user.name.split(" ")[0] : "";
+  const firstName = user?.name?.split(" ")[0] ?? "";
 
   return (
     <ThemedView style={styles.container}>
       {!user ? (
-        <SkeletonBox height={60} width={"80%"} />
+        <ThemedView style={styles.row}>
+          <SkeletonBox width={50} height={50} borderRadius={25} />
+          <ThemedView style={styles.textContainer}>
+            <SkeletonBox width={140} height={20} />
+            <SkeletonBox width={220} height={16} style={{ marginTop: 6 }} />
+          </ThemedView>
+        </ThemedView>
       ) : (
-        <>
-          <ThemedText
-            type="title"
-            numberOfLines={1}
-            style={{ color: titleColr }}
-          >
-            Hi, {firstName}
-          </ThemedText>
-          <ThemedText
-            type="default"
-            style={[styles.subtitle, { color: subTitleColr, fontSize: 16 }]}
-          >
-            Welcome back to your dashboard
-          </ThemedText>
-        </>
+        <ThemedView style={styles.row}>
+          <Avatar size={50} />
+
+          <ThemedView style={styles.textContainer}>
+            <ThemedText
+              type="subtitle"
+              numberOfLines={1}
+              style={{ color: titleColor }}
+            >
+              Hi, {firstName}
+            </ThemedText>
+
+            <ThemedText
+              type="default"
+              style={[styles.subtitle, { color: subTitleColor }]}
+            >
+              Welcome back to your dashboard
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
       )}
     </ThemedView>
   );
@@ -43,13 +54,22 @@ export default HomeHeader;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    paddingTop: 56,
+    paddingTop: 50,
     paddingBottom: 24,
     paddingHorizontal: 20,
-    justifyContent: "center",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  textContainer: {
+    marginLeft: 16,
+    flex: 1,
+    paddingTop: 4,
   },
   subtitle: {
-    marginTop: 4,
-    opacity: 0.7,
+    marginTop: 0,
+    opacity: 0.9,
+    fontSize: 14,
   },
 });

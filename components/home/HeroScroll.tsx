@@ -5,8 +5,8 @@ import { StyleSheet, FlatList, View, Dimensions } from "react-native";
 import { ThemedView } from "../shared";
 
 const { width } = Dimensions.get("window");
-const HERO_HEIGHT = 220;
-const CARD_WIDTH = width * 0.75;
+const HERO_HEIGHT = 160;
+const CARD_WIDTH = width * 0.80;
 const SPACING = 16;
 const SNAP_INTERVAL = CARD_WIDTH + SPACING;
 
@@ -49,7 +49,7 @@ const HeroScroll = ({ children }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { marginVertical: 0, paddingTop: 10 },
+  container: { marginVertical: 0},
   listContent: { paddingLeft: 15 },
 });
 
