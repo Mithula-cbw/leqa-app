@@ -5,3 +5,4 @@ export { default as HeroCardOne } from "./HeroCardOne";
 export { default as HeroCardTwo } from "./HeroCardTwo";
 export { default as ProductCard } from "./ProductCard";
 export { default as ProductSection } from "./ProductSection";
+export { default as ProductSkeleton } from "./ProductSkeleton";

@@ -7,13 +7,21 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
 import { formatText } from "@/utils/formatText";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import ProductSkeleton from "./ProductSkeleton";
 
 const ProductCard = ({ item }: { item: Product }) => {
-  const { controller, refreshProducts } = useStock();
+  const goToProduct = () => {
+    router.push(`/products`);
+    console.log("prodcut", item.id); // dev-log
+  };
+  const { loading, controller, refreshProducts } = useStock();
   const [modalVisible, setModalVisible] = useState(false);
 
-  const cardBg = useThemeColor({}, "background");
+  const cardBg = useThemeColor({}, "sheet");
   const bgSecondary = useThemeColor({}, "background-seconary");
+  const chevronClr = useThemeColor({}, "icon");
 
   const handleIncrease = async () => {
     const expiry = new Date();
@@ -32,6 +40,14 @@ const ProductCard = ({ item }: { item: Product }) => {
     setModalVisible(false);
   };
 
+  if (loading) {
+    return (
+      <View>
+        <ProductSkeleton />
+      </View>
+    );
+  }
+
   return (
     <>
       <ReductionModal
@@ -42,6 +58,7 @@ const ProductCard = ({ item }: { item: Product }) => {
       />
 
       <View style={[styles.card, { backgroundColor: cardBg }]}>
+        {/* left side */}
         <View style={styles.leftSection}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.thumbnail} />
@@ -54,24 +71,35 @@ const ProductCard = ({ item }: { item: Product }) => {
               </ThemedText>
             </View>
           )}
-          <View style={styles.info}>
-            <ThemedText type="defaultSemiBold" numberOfLines={1}>
-              {formatText(item.title, "title")}
-            </ThemedText>
-            <View style={styles.detailsRow}>
-              <ThemedText style={styles.subText}>{item.weight}</ThemedText>
-              <ThemedText style={styles.dot}> • </ThemedText>
-              <ThemedText style={styles.priceText}>
-                {new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(item.price || 0)}
-              </ThemedText>
-            </View>
-          </View>
         </View>
 
+        {/* right side */}
         <View style={styles.rightSection}>
+          <View style={styles.rightInner}>
+            <View style={styles.info}>
+              <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                {formatText(item.title, "title")}
+              </ThemedText>
+              <View style={styles.detailsRow}>
+                <ThemedText style={styles.subText}>{item.weight}</ThemedText>
+                <ThemedText style={styles.dot}> • </ThemedText>
+                <ThemedText style={styles.priceText}>
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(item.price || 0)}
+                </ThemedText>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={goToProduct}
+              style={styles.caretBtn}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="chevron-forward" size={22} color={chevronClr} />
+            </TouchableOpacity>
+          </View>
+
           <View style={[styles.controls, { backgroundColor: bgSecondary }]}>
             <TouchableOpacity
               onPress={() => setModalVisible(true)}
@@ -89,7 +117,7 @@ const ProductCard = ({ item }: { item: Product }) => {
               <ThemedText
                 type="defaultSemiBold"
                 style={{
-                  color: item.total_stock === 0 ? "#ff4444" : undefined,
+                  color: item.total_stock === 0 ? "#44ff44" : undefined,
                 }}
               >
                 {item.total_stock}
@@ -115,15 +143,17 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+    gap: 6,
+    height: 120,
+    padding: 10,
+    borderRadius: 16,
+    marginBottom: 10,
     alignItems: "center",
-    elevation: 2,
+    elevation: 3,
     shadowOpacity: 0.05,
   },
-  leftSection: { flexDirection: "row", alignItems: "center", flex: 1 },
-  thumbnail: { width: 50, height: 50, borderRadius: 15, marginRight: 12 },
+  leftSection: { flexDirection: "column", alignItems: "flex-start" },
+  thumbnail: { width: 100, height: 100, borderRadius: 12, marginRight: 12 },
   placeholder: {
     width: 50,
     height: 50,
@@ -133,17 +163,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   placeholderText: { opacity: 0.4, fontSize: 18, fontWeight: "bold" },
-  info: { flex: 1 },
+  info: {
+    flex: 1,
+    flexDirection: "column",
+    width: "100%",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  subText: { fontSize: 12, opacity: 0.5 },
-  priceText: { fontSize: 12, fontWeight: "bold", color: "#28a745" },
+  subText: { fontSize: 14, opacity: 0.5 },
+  priceText: { fontSize: 14, fontWeight: "bold", color: "#28a745" },
   dot: { marginHorizontal: 4, opacity: 0.3 },
-  rightSection: { alignItems: "flex-end" },
+  rightSection: {
+    flex: 1,
+    flexDirection: "column",
+    height: "100%",
+    borderRadius: 12,
+    alignItems: "flex-end",
+  },
+  rightInner: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   controls: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
     borderRadius: 16,
-    padding: 4,
+    padding: 5,
   },
   stockCount: { paddingHorizontal: 8, minWidth: 28, alignItems: "center" },
   btn: {
@@ -157,4 +204,8 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: "#e7f3ef" },
   reduceBtn: { backgroundColor: "#fff3cd" },
   btnText: { fontSize: 18, fontWeight: "600" },
+  caretBtn: {
+    marginTop: 6,
+    padding: 4,
+  },
 });

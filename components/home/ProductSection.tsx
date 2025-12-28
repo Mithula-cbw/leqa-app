@@ -1,4 +1,5 @@
 // Leqa © 2025 Mithula Chanthuka
+
 import React, { useMemo } from "react";
 import { Text, StyleSheet, TouchableOpacity, View } from "react-native";
 import DraggableFlatList, {
@@ -9,6 +10,7 @@ import ProductCard from "./ProductCard";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { NoProductsFound } from "../shared";
 
 const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
   products,
@@ -36,11 +38,16 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
     </ScaleDecorator>
   );
 
+  if (!isLoading && products.length === 0) {
+    return <NoProductsFound />;
+  }
+
   return (
     <View style={styles.container}>
       <Text style={[styles.sectionTitle, { color: subColor }]}>
         {products.some((p) => p.is_pinned) ? "Pinned Products" : "Quick View"}
       </Text>
+
       <DraggableFlatList
         data={displayData}
         onDragEnd={({ data }) => reorderProducts(data)}

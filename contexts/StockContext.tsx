@@ -35,7 +35,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const reorderProducts = async (newOrder: Product[]) => {
-    setProducts(newOrder); // Optimistic UI update
+    setProducts(newOrder);
     try {
       const mappedOrders = newOrder.map((p, index) => ({
         id: p.id,
@@ -44,7 +44,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await controller.updateSortOrder(mappedOrders);
     } catch (err) {
       console.error("Failed to save order", err);
-      refreshProducts(); // Revert on error
+      refreshProducts();
     }
   };
 
