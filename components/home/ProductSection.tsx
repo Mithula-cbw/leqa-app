@@ -1,41 +1,53 @@
 // Leqa © 2025 Mithula Chanthuka
-
 import React, { useMemo } from "react";
-import { Text, View, StyleSheet, FlatList } from "react-native";
-
-import { NoProductsFound } from "@/components/shared";
+import { Text, StyleSheet, TouchableOpacity, View } from "react-native";
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
 import ProductCard from "./ProductCard";
 import { Product } from "@/types/stock";
-import { router } from "expo-router";
+import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
-interface ProductSectionProps {
-  products: Product[];
-  isLoading: boolean;
-}
-
-const ProductSection: React.FC<ProductSectionProps> = ({ products, isLoading }) => {
-  const activeProducts = useMemo(
-    () => products.filter((p) => p.total_stock > 0).slice(0, 2),
-    [products]
-  );
+const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
+  products,
+  isLoading,
+}) => {
+  const { reorderProducts } = useStock();
   const subColor = useThemeColor({}, "text-subtitle");
+
+  const displayData = useMemo(() => {
+    const pinned = products.filter((p) => p.is_pinned === 1);
+    return pinned.length > 0
+      ? pinned
+      : products.filter((p) => p.total_stock > 0).slice(0, 2);
+  }, [products]);
+
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<Product>) => (
+    <ScaleDecorator>
+      <TouchableOpacity
+        onLongPress={drag}
+        disabled={isActive}
+        activeOpacity={0.9}
+      >
+        <ProductCard item={item} />
+      </TouchableOpacity>
+    </ScaleDecorator>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, { color: subColor }]}>In Stock</Text>
-
-      {(activeProducts.length === 0 && !isLoading) ? (
-        <NoProductsFound onAddProduct={() => router.push("/settings")} />
-      ) : (
-        <FlatList
-          data={activeProducts}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <ProductCard item={item} />}
-          scrollEnabled={false}
-          contentContainerStyle={styles.list}
-        />
-      )}
+      <Text style={[styles.sectionTitle, { color: subColor }]}>
+        {products.some((p) => p.is_pinned) ? "Pinned Products" : "Quick View"}
+      </Text>
+      <DraggableFlatList
+        data={displayData}
+        onDragEnd={({ data }) => reorderProducts(data)}
+        keyExtractor={(item) => `product-${item.id}`}
+        renderItem={renderItem}
+        scrollEnabled={false}
+      />
     </View>
   );
 };
@@ -43,21 +55,11 @@ const ProductSection: React.FC<ProductSectionProps> = ({ products, isLoading }) 
 export default ProductSection;
 
 const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    padding: 0,
-  },
+  container: { width: "100%" },
   sectionTitle: {
     marginLeft: 10,
     marginBottom: 12,
     fontSize: 22,
     fontWeight: "500",
-  },
-  list: {
-    gap: 2,
-  },
-  emptyText: {
-    opacity: 0.6,
-    fontSize: 14,
   },
 });

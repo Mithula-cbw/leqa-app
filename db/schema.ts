@@ -2,6 +2,9 @@ import { SQLiteDatabase } from "expo-sqlite";
 
 export const initializeDatabase = async (db: SQLiteDatabase) => {
   try {
+    await db.execAsync(`DROP TABLE IF EXISTS products;`);
+    console.log("The DB was reset");
+
     await db.execAsync(`PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;`);
 
     await db.execAsync(`
@@ -20,8 +23,10 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         weight TEXT,
         image TEXT,
         price REAL DEFAULT 0.0,
-        default_shelf_life INTEGER, -- days until expiry
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        default_shelf_life INTEGER, -- days until expiry,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_pinned INTEGER DEFAULT 0, -- 0 for false, 1 for true,
+        sort_order INTEGER DEFAULT 0
 );
 
       -- StockItems Table (The individual batches)

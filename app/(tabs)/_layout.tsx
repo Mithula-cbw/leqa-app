@@ -7,6 +7,7 @@ import { useUser } from "@/contexts/UserContext";
 import NewUserSheet from "@/features/shared/NewUserSheet";
 import { useEffect, useState } from "react";
 import BottomSheet from "@/components/ui/BottomSheet";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   const { user, loading } = useUser();
@@ -20,7 +21,7 @@ export default function RootLayout() {
   }, [user, loading]);
 
   return (
-    <>
+    <GestureHandlerRootView style={{flex: 1}}>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: activeTint,
@@ -113,6 +114,6 @@ export default function RootLayout() {
       >
         <NewUserSheet />
       </BottomSheet>
-    </>
+    </GestureHandlerRootView>
   );
 }

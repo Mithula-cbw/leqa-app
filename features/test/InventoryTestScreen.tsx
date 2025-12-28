@@ -12,7 +12,7 @@ export default function InventoryTestScreen() {
   const { products, refreshProducts, loading } = useStock();
 
   const handleAddDummyProduct = async () => {
-    await controller.createProduct("Mushroom 350g", "Fresh white mushrooms", "350g", 7);
+    await controller.createProduct("calssic 550g", "Fresh white mushrooms", "550g", 9);
     await refreshProducts();
   };
 

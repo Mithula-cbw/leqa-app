@@ -38,6 +38,14 @@ export default function RootLayout() {
                     name="(tabs)"
                     options={{ headerShown: false }}
                   />
+                  <Stack.Screen
+                    name="add-product"
+                    options={{
+                      presentation: "modal",
+                      headerTitle: "Add Product",
+                      headerShown: true,
+                    }}
+                  />
                 </Stack>
               </NavigationThemeWrapper>
             </SafeAreaProvider>

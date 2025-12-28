@@ -6,35 +6,29 @@ import { ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
-import { useSQLiteContext } from "expo-sqlite";
-import { stockController } from "@/db/stockController";
 
 const ProductCard = ({ item }: { item: Product }) => {
-  const db = useSQLiteContext();
-  const controller = stockController(db);
-  const { refreshProducts } = useStock();
+  const { controller, refreshProducts } = useStock();
   const cardBg = useThemeColor({}, "background");
   const bgSecondary = useThemeColor({}, "background-seconary");
 
   const handleIncrease = async () => {
     const expiry = new Date();
-    // Fallback to 7 days if default_shelf_life is null/undefined
-    const daysToAdd = item.default_shelf_life ?? 7; 
-    expiry.setDate(expiry.getDate() + daysToAdd);
-    
+    expiry.setDate(expiry.getDate() + (item.default_shelf_life ?? 7));
     await controller.addStockBatch(item.id, 1, expiry.toISOString());
     await refreshProducts();
   };
 
   const handleDecrease = async () => {
-    if (item.total_stock <= 0) return;
-    await controller.reduceStock(item.id, 1);
-    await refreshProducts();
+    if (item.total_stock > 0) {
+      await controller.reduceStock(item.id, 1);
+      await refreshProducts();
+    }
   };
 
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD", // Change to your preferred currency
+    currency: "USD",
   }).format(item.price || 0);
 
   return (
@@ -44,10 +38,11 @@ const ProductCard = ({ item }: { item: Product }) => {
           <Image source={{ uri: item.image }} style={styles.thumbnail} />
         ) : (
           <View style={[styles.placeholder, { backgroundColor: bgSecondary }]}>
-            <ThemedText style={styles.placeholderText}>{item.title[0].toUpperCase()}</ThemedText>
+            <ThemedText style={styles.placeholderText}>
+              {item.title[0].toUpperCase()}
+            </ThemedText>
           </View>
         )}
-
         <View style={styles.info}>
           <ThemedText type="defaultSemiBold" numberOfLines={1}>
             {item.title}
@@ -62,24 +57,29 @@ const ProductCard = ({ item }: { item: Product }) => {
 
       <View style={styles.rightSection}>
         <View style={[styles.controls, { backgroundColor: bgSecondary }]}>
-          <TouchableOpacity 
-            onPress={handleDecrease} 
-            style={[styles.btn, item.total_stock <= 0 && { opacity: 0.3 }]}
+          <TouchableOpacity
+            onPress={handleDecrease}
             disabled={item.total_stock <= 0}
+            style={[
+              styles.btn,
+              styles.reduceBtn,
+              item.total_stock <= 0 && { opacity: 0.3 },
+            ]}
           >
             <ThemedText style={styles.btnText}>-</ThemedText>
           </TouchableOpacity>
-          
           <View style={styles.stockCount}>
-            <ThemedText 
-                type="defaultSemiBold" 
-                style={{ color: item.total_stock === 0 ? '#ff4444' : undefined }}
+            <ThemedText
+              type="defaultSemiBold"
+              style={{ color: item.total_stock === 0 ? "#ff4444" : undefined }}
             >
-                {item.total_stock}
+              {item.total_stock}
             </ThemedText>
           </View>
-
-          <TouchableOpacity onPress={handleIncrease} style={styles.btn}>
+          <TouchableOpacity
+            onPress={handleIncrease}
+            style={[styles.btn, styles.addBtn]}
+          >
             <ThemedText style={styles.btnText}>+</ThemedText>
           </TouchableOpacity>
         </View>
@@ -98,11 +98,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
     elevation: 2,
+    shadowOpacity: 0.05,
   },
   leftSection: { flexDirection: "row", alignItems: "center", flex: 1 },
   thumbnail: { width: 50, height: 50, borderRadius: 15, marginRight: 12 },
@@ -127,23 +124,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 4,
   },
-  stockCount: {
-    paddingHorizontal: 8,
-    minWidth: 28,
-    alignItems: "center",
-  },
+  stockCount: { paddingHorizontal: 8, minWidth: 28, alignItems: "center" },
   btn: {
     width: 32,
     height: 32,
     borderRadius: 12,
-    backgroundColor: "#fff", // Keep buttons white for contrast against secondary bg
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    elevation: 3,
   },
+  addBtn: { backgroundColor: "#e7f3ef" },
+  reduceBtn: { backgroundColor: "#fff3cd" },
   btnText: { fontSize: 18, fontWeight: "600" },
 });

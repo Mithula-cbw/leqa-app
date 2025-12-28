@@ -6,19 +6,23 @@ import { SQLiteDatabase } from "expo-sqlite";
 export const stockController = (db: SQLiteDatabase) => {
   return {
     // Create a New Product (The Blueprint)
-    // Leqa © 2025 Mithula Chanthuka
-
     createProduct: async (
       title: string,
       description: string,
       weight: string,
-      price: number, // Added price
-      image?: string,
+      price: number,
+      image?: string | null,
       defaultShelfLife?: number
     ) => {
       const existing = await db.getFirstAsync<{ id: number }>(
-        "SELECT id FROM products WHERE LOWER(TRIM(title)) = LOWER(TRIM(?)) AND LOWER(TRIM(weight)) = LOWER(TRIM(?))",
-        [title, weight]
+        `
+  SELECT id
+  FROM products
+  WHERE LOWER(TRIM(title)) = LOWER(TRIM(?))
+    AND LOWER(TRIM(weight)) = LOWER(TRIM(?))
+    AND price = ?
+  `,
+        [title, weight, price]
       );
 
       if (existing) {
@@ -62,13 +66,11 @@ export const stockController = (db: SQLiteDatabase) => {
     // Get All Products with their Total Stock (For Main List)
     getAllProducts: async (): Promise<Product[]> => {
       return await db.getAllAsync<Product>(`
-        SELECT 
-          p.*, 
-          COALESCE(SUM(s.quantity), 0) as total_stock
+        SELECT p.*, COALESCE(SUM(s.quantity), 0) as total_stock
         FROM products p
         LEFT JOIN stock_items s ON p.id = s.product_id
         GROUP BY p.id
-        ORDER BY p.title ASC
+        ORDER BY p.is_pinned DESC, p.sort_order ASC, p.title ASC
       `);
     },
 
@@ -111,6 +113,22 @@ export const stockController = (db: SQLiteDatabase) => {
       return await db.runAsync("DELETE FROM products WHERE id = ?", [
         productId,
       ]);
+    },
+
+    togglePin: async (productId: number, isPinned: boolean) => {
+      return await db.runAsync(
+        "UPDATE products SET is_pinned = ? WHERE id = ?",
+        [isPinned ? 1 : 0, productId]
+      );
+    },
+
+    updateSortOrder: async (orders: { id: number; position: number }[]) => {
+      for (const item of orders) {
+        await db.runAsync("UPDATE products SET sort_order = ? WHERE id = ?", [
+          item.position,
+          item.id,
+        ]);
+      }
     },
   };
 };
