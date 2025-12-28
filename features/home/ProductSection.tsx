@@ -6,11 +6,11 @@ import DraggableFlatList, {
   RenderItemParams,
   ScaleDecorator,
 } from "react-native-draggable-flatlist";
-import ProductCard from "./ProductCard";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { NoProductsFound } from "../shared";
+import { ProductCard } from "@/components/home";
+import { NoProductsFound } from "@/components/shared";
 
 const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
   products,

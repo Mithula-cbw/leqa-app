@@ -1,17 +1,22 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import { StyleSheet, View, ScrollView } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { ThemedView } from "@/components/shared";
-import { FloatingActionButtons, HomeHeader, HomeHero } from "@/features/home";
+import { AddStockSheet, FloatingActionButtons, HomeHeader, HomeHero, ProductSection } from "@/features/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useStock } from "@/contexts/StockContext";
-import { ProductSection } from "@/components/home";
+import BottomSheet from "@/components/ui/BottomSheet";
 // import InventoryTestScreen from "@/features/test/InventoryTestScreen";
 
 export default function Index() {
   const bgSecondary = useThemeColor({}, "background-seconary");
   const { products, loading } = useStock();
+  const [sheetVisible, setSheetVisible] = useState(false);
+
+  const onAdd = () =>{
+    setSheetVisible(true)
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -30,9 +35,16 @@ export default function Index() {
       </ScrollView>
 
       <FloatingActionButtons
-        onAdd={() => console.log("Add Product")}
+        onAdd={onAdd}
         onRemove={() => console.log("Remove/Reduce Stock")}
       />
+      <BottomSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        animationDuration={600}
+      >
+        <AddStockSheet onFinish={() => setSheetVisible(false)} />
+      </BottomSheet>
     </ThemedView>
   );
 }
