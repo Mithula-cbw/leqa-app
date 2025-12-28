@@ -5,8 +5,8 @@ import { HeroCardOne, HeroCardTwo, HeroScroll } from "@/components/home";
 const HomeHero = () => {
   return (
     <HeroScroll>
-      <HeroCardOne leftAmount={12} />
-      <HeroCardTwo leftAmount={0}/>
+      <HeroCardOne />
+      <HeroCardOne />
     </HeroScroll>
   );
 };

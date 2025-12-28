@@ -49,7 +49,7 @@ const HeroScroll = ({ children }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { marginVertical: 0},
+  container: { marginVertical: 5},
   listContent: { paddingLeft: 15 },
 });
 

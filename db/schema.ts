@@ -18,6 +18,8 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         title TEXT NOT NULL,
         description TEXT,
         weight TEXT,
+        image TEXT,
+        price REAL DEFAULT 0.0,
         default_shelf_life INTEGER, -- days until expiry
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

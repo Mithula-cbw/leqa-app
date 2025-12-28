@@ -6,15 +6,35 @@ import { SQLiteDatabase } from "expo-sqlite";
 export const stockController = (db: SQLiteDatabase) => {
   return {
     // Create a New Product (The Blueprint)
+    // Leqa © 2025 Mithula Chanthuka
+
     createProduct: async (
       title: string,
       description: string,
       weight: string,
+      price: number, // Added price
+      image?: string,
       defaultShelfLife?: number
     ) => {
+      const existing = await db.getFirstAsync<{ id: number }>(
+        "SELECT id FROM products WHERE LOWER(TRIM(title)) = LOWER(TRIM(?)) AND LOWER(TRIM(weight)) = LOWER(TRIM(?))",
+        [title, weight]
+      );
+
+      if (existing) {
+        throw new Error(`Product "${title}" already exists.`);
+      }
+
       return await db.runAsync(
-        "INSERT INTO products (title, description, weight, default_shelf_life) VALUES (?, ?, ?, ?)",
-        [title, description, weight, defaultShelfLife ?? null]
+        "INSERT INTO products (title, description, weight, price, image, default_shelf_life) VALUES (?, ?, ?, ?, ?, ?)",
+        [
+          title,
+          description,
+          weight,
+          price,
+          image ?? null,
+          defaultShelfLife ?? null,
+        ]
       );
     },
 
@@ -29,7 +49,7 @@ export const stockController = (db: SQLiteDatabase) => {
         "SELECT MAX(batch_number) as maxBatch FROM stock_items WHERE product_id = ?",
         [productId]
       );
-      
+
       const nextBatchNumber = (result?.maxBatch || 0) + 1;
 
       // Insert the new batch

@@ -54,8 +54,8 @@ export default HomeHeader;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    paddingTop: 36,
-    paddingBottom: 24,
+    paddingTop: 52,
+    paddingBottom: 16,
     paddingHorizontal: 20,
   },
   row: {

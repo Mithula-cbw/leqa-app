@@ -1,11 +1,13 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { StyleSheet, View, FlatList } from "react-native";
+import { StyleSheet, View, ScrollView } from "react-native";
 import React from "react";
 import { ThemedView } from "@/components/shared";
 import { FloatingActionButtons, HomeHeader, HomeHero } from "@/features/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useStock } from "@/contexts/StockContext";
+import { ProductSection } from "@/components/home";
+// import InventoryTestScreen from "@/features/test/InventoryTestScreen";
 
 export default function Index() {
   const bgSecondary = useThemeColor({}, "background-seconary");
@@ -14,21 +16,18 @@ export default function Index() {
   return (
     <ThemedView style={styles.container}>
       <HomeHeader />
-      <HomeHero />
 
-      {/* content */}
-      <View style={[styles.content, { backgroundColor: bgSecondary }]}>
-        <FlatList
-          data={products}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listPadding}
-          renderItem={({ item }) => (
-            <View style={styles.productCard}>
-              
-            </View>
-          )}
-        />
-      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <HomeHero />
+
+        <View style={[styles.content, { backgroundColor: bgSecondary }]}>
+          <ProductSection products={products} isLoading={loading}/>
+          {/* <InventoryTestScreen /> */}
+        </View>
+      </ScrollView>
 
       <FloatingActionButtons
         onAdd={() => console.log("Add Product")}
@@ -41,21 +40,17 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 20,
+  },
+  scrollContent: {
+    flex: 1,
+    paddingBottom: 120,
   },
   content: {
     flex: 1,
-    width: "100%",
     marginTop: 35,
     borderTopRightRadius: 36,
     borderTopLeftRadius: 36,
-    overflow: "hidden",
-  },
-  listPadding: {
-    padding: 20,
-    paddingBottom: 100,
-  },
-  productCard: {
-    
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
 });

@@ -5,7 +5,10 @@ export interface Product {
   title: string;
   description: string;
   weight: string;
+  price: number;
+  image?: string | null;
   total_stock: number;
+  default_shelf_life?: number | null;
 }
 
 export interface StockItem {
