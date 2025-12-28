@@ -1,14 +1,17 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
-import { ThemedText } from "@/components/shared";
+import { ReductionModal, ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
+import { formatText } from "@/utils/formatText";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const { controller, refreshProducts } = useStock();
+  const [modalVisible, setModalVisible] = useState(false);
+
   const cardBg = useThemeColor({}, "background");
   const bgSecondary = useThemeColor({}, "background-seconary");
 
@@ -19,72 +22,90 @@ const ProductCard = ({ item }: { item: Product }) => {
     await refreshProducts();
   };
 
-  const handleDecrease = async () => {
+  const onReduceConfirm = async (type: "sell" | "waste" | "delete") => {
+    console.log(`Action: ${type.toUpperCase()} - Product: ${item.title}`);
+
     if (item.total_stock > 0) {
       await controller.reduceStock(item.id, 1);
       await refreshProducts();
     }
+    setModalVisible(false);
   };
 
-  const formattedPrice = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(item.price || 0);
-
   return (
-    <View style={[styles.card, { backgroundColor: cardBg }]}>
-      <View style={styles.leftSection}>
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.thumbnail} />
-        ) : (
-          <View style={[styles.placeholder, { backgroundColor: bgSecondary }]}>
-            <ThemedText style={styles.placeholderText}>
-              {item.title[0].toUpperCase()}
-            </ThemedText>
-          </View>
-        )}
-        <View style={styles.info}>
-          <ThemedText type="defaultSemiBold" numberOfLines={1}>
-            {item.title}
-          </ThemedText>
-          <View style={styles.detailsRow}>
-            <ThemedText style={styles.subText}>{item.weight}</ThemedText>
-            <ThemedText style={styles.dot}> • </ThemedText>
-            <ThemedText style={styles.priceText}>{formattedPrice}</ThemedText>
-          </View>
-        </View>
-      </View>
+    <>
+      <ReductionModal
+        isVisible={modalVisible}
+        productTitle={item.title}
+        onClose={() => setModalVisible(false)}
+        onConfirm={onReduceConfirm}
+      />
 
-      <View style={styles.rightSection}>
-        <View style={[styles.controls, { backgroundColor: bgSecondary }]}>
-          <TouchableOpacity
-            onPress={handleDecrease}
-            disabled={item.total_stock <= 0}
-            style={[
-              styles.btn,
-              styles.reduceBtn,
-              item.total_stock <= 0 && { opacity: 0.3 },
-            ]}
-          >
-            <ThemedText style={styles.btnText}>-</ThemedText>
-          </TouchableOpacity>
-          <View style={styles.stockCount}>
-            <ThemedText
-              type="defaultSemiBold"
-              style={{ color: item.total_stock === 0 ? "#ff4444" : undefined }}
+      <View style={[styles.card, { backgroundColor: cardBg }]}>
+        <View style={styles.leftSection}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.thumbnail} />
+          ) : (
+            <View
+              style={[styles.placeholder, { backgroundColor: bgSecondary }]}
             >
-              {item.total_stock}
+              <ThemedText style={styles.placeholderText}>
+                {item.title[0].toUpperCase()}
+              </ThemedText>
+            </View>
+          )}
+          <View style={styles.info}>
+            <ThemedText type="defaultSemiBold" numberOfLines={1}>
+              {formatText(item.title, "title")}
             </ThemedText>
+            <View style={styles.detailsRow}>
+              <ThemedText style={styles.subText}>{item.weight}</ThemedText>
+              <ThemedText style={styles.dot}> • </ThemedText>
+              <ThemedText style={styles.priceText}>
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(item.price || 0)}
+              </ThemedText>
+            </View>
           </View>
-          <TouchableOpacity
-            onPress={handleIncrease}
-            style={[styles.btn, styles.addBtn]}
-          >
-            <ThemedText style={styles.btnText}>+</ThemedText>
-          </TouchableOpacity>
+        </View>
+
+        <View style={styles.rightSection}>
+          <View style={[styles.controls, { backgroundColor: bgSecondary }]}>
+            <TouchableOpacity
+              onPress={() => setModalVisible(true)}
+              disabled={item.total_stock <= 0}
+              style={[
+                styles.btn,
+                styles.reduceBtn,
+                item.total_stock <= 0 && { opacity: 0.3 },
+              ]}
+            >
+              <ThemedText style={styles.btnText}>-</ThemedText>
+            </TouchableOpacity>
+
+            <View style={styles.stockCount}>
+              <ThemedText
+                type="defaultSemiBold"
+                style={{
+                  color: item.total_stock === 0 ? "#ff4444" : undefined,
+                }}
+              >
+                {item.total_stock}
+              </ThemedText>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleIncrease}
+              style={[styles.btn, styles.addBtn]}
+            >
+              <ThemedText style={styles.btnText}>+</ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+    </>
   );
 };
 
