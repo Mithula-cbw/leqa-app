@@ -82,13 +82,6 @@ const ProductCard = ({ item }: { item: Product }) => {
               </ThemedText>
               <View style={styles.detailsRow}>
                 <ThemedText style={styles.subText}>{item.weight}</ThemedText>
-                <ThemedText style={styles.dot}> • </ThemedText>
-                <ThemedText style={styles.priceText}>
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(item.price || 0)}
-                </ThemedText>
               </View>
             </View>
             <TouchableOpacity
@@ -143,7 +136,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 6,
+    gap: 4,
     height: 120,
     padding: 10,
     borderRadius: 16,
@@ -169,17 +162,17 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "flex-start",
     alignItems: "flex-start",
+    marginLeft: 2
   },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  subText: { fontSize: 14, opacity: 0.5 },
-  priceText: { fontSize: 14, fontWeight: "bold", color: "#28a745" },
+  subText: { fontSize: 16, opacity: 0.9, color: "#19a139ff" },
   dot: { marginHorizontal: 4, opacity: 0.3 },
   rightSection: {
     flex: 1,
     flexDirection: "column",
     height: "100%",
     borderRadius: 12,
-    alignItems: "flex-end",
+    alignItems: "flex-start",
   },
   rightInner: {
     flex: 1,
@@ -189,14 +182,14 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: "row",
     alignItems: "flex-end",
-    borderRadius: 16,
-    padding: 5,
+    borderRadius: 18,
+    padding: 3,
   },
   stockCount: { paddingHorizontal: 8, minWidth: 28, alignItems: "center" },
   btn: {
     width: 32,
     height: 32,
-    borderRadius: 12,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     elevation: 3,

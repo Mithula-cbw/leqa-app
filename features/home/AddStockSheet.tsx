@@ -30,7 +30,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const textColor = useThemeColor({}, "text");
   const textSub = useThemeColor({}, "text-subtitle");
   const primaryBtn = useThemeColor({}, "background-muted");
-  const primaryBtnActive = "#28a745";
+  const primaryBtnActive = "#487d55ff";
 
   const filteredProducts = useMemo(() => {
     if (!search) return [];
@@ -39,8 +39,9 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
       .slice(0, 5);
   }, [search, products]);
 
-  const pinnedProducts = useMemo(() => {
-    return products.filter((p) => p.total_stock > 0).slice(0, 6);
+  const displayData = useMemo(() => {
+    const pinned = products.filter((p) => p.is_pinned === 1);
+    return pinned.length > 0 ? pinned : products.slice(0, 2); //dev
   }, [products]);
 
   const addProductToStaging = (product: Product) => {
@@ -138,7 +139,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 10 }}
           >
-            {pinnedProducts.map((p) => (
+            {displayData.map((p) => (
               <AddQuickProductChip
                 key={p.id}
                 product={p}
