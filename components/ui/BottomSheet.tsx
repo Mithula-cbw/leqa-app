@@ -48,12 +48,12 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  
+
   const lastBackPressed = useRef<number>(0);
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipOpacity = useRef(new Animated.Value(0)).current;
 
-  const sheetBg = useThemeColor({}, "sheet")
+  const sheetBg = useThemeColor({}, "sheet");
 
   useEffect(() => {
     if (visible) {
@@ -73,8 +73,16 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [visible]);
@@ -96,15 +104,23 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   };
 
   const triggerTooltip = () => {
-    if (Platform.OS === 'android') {
-        ToastAndroid.show("Press back again to exit Leqa", ToastAndroid.SHORT);
+    if (Platform.OS === "android") {
+      ToastAndroid.show("Press back again to exit Leqa", ToastAndroid.SHORT);
     } else {
-        setShowTooltip(true);
-        Animated.sequence([
-          Animated.timing(tooltipOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-          Animated.delay(1500),
-          Animated.timing(tooltipOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-        ]).start(() => setShowTooltip(false));
+      setShowTooltip(true);
+      Animated.sequence([
+        Animated.timing(tooltipOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.delay(1500),
+        Animated.timing(tooltipOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setShowTooltip(false));
     }
   };
 
@@ -118,7 +134,11 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       <View style={styles.container}>
         <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
           {onOverlayClose && showCloseButton && (
-            <TouchableOpacity style={styles.flexFill} activeOpacity={1} onPress={onClose} />
+            <TouchableOpacity
+              style={styles.flexFill}
+              activeOpacity={1}
+              onPress={onClose}
+            />
           )}
         </Animated.View>
 
@@ -135,23 +155,39 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          <ThemedView style={[styles.sheet, sheetStyle, { backgroundColor: sheetBg}]}>
+          <ThemedView
+            style={[styles.sheet, sheetStyle, { backgroundColor: sheetBg }]}
+          >
             {(showCloseButton || sheetTitle || sheetSubtitle) && (
               <ThemedView style={styles.sheetHeader}>
                 <ThemedView
                   style={[
                     styles.headerContent,
-                    { justifyContent: sheetTitle || sheetSubtitle ? "space-between" : "flex-end" },
+                    {
+                      justifyContent:
+                        sheetTitle || sheetSubtitle
+                          ? "space-between"
+                          : "flex-end",
+                    },
                   ]}
                 >
                   {(sheetTitle || sheetSubtitle) && (
                     <ThemedView style={styles.headerTextWrapper}>
-                      {sheetTitle && <Text style={styles.sheetTitle}>{sheetTitle}</Text>}
-                      {sheetSubtitle && <Text style={styles.sheetSubtitle}>{sheetSubtitle}</Text>}
+                      {sheetTitle && (
+                        <Text style={styles.sheetTitle}>{sheetTitle}</Text>
+                      )}
+                      {sheetSubtitle && (
+                        <Text style={styles.sheetSubtitle}>
+                          {sheetSubtitle}
+                        </Text>
+                      )}
                     </ThemedView>
                   )}
                   {showCloseButton && (
-                    <TouchableOpacity style={[styles.closeButton, closeButtonStyle]} onPress={onClose}>
+                    <TouchableOpacity
+                      style={[styles.closeButton, closeButtonStyle]}
+                      onPress={onClose}
+                    >
                       <Text style={[styles.closeText, closeTextStyle]}>×</Text>
                     </TouchableOpacity>
                   )}
@@ -181,17 +217,17 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
   },
   tooltip: {
-    position: 'absolute',
-    top: '50%',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    position: "absolute",
+    top: "50%",
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.8)",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
     zIndex: 9999,
   },
   tooltipText: {
-    color: 'white',
+    color: "white",
     fontSize: 14,
   },
   sheetContainer: {
@@ -204,10 +240,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 60,
     paddingTop: 5,
-    maxHeight: SCREEN_HEIGHT * 0.7,
+    maxHeight: SCREEN_HEIGHT * 0.9,
   },
   sheetHeader: {
-    marginBottom: 20,
+    marginBottom: 0,
+    padding:5
   },
   headerContent: {
     flexDirection: "row",
@@ -217,13 +254,14 @@ const styles = StyleSheet.create({
     flexDirection: "column",
   },
   sheetTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: "700",
     marginBottom: 4,
   },
   sheetSubtitle: {
-    fontSize: 14,
-    color: "#666",
+    maxWidth: "90%",
+    fontSize: 15,
+    opacity: 0.6,
   },
   closeButton: {
     padding: 5,

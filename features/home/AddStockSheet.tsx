@@ -31,7 +31,9 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const bgSecondary = useThemeColor({}, "background-seconary");
   const inputBg = useThemeColor({}, "background-seconary");
   const textColor = useThemeColor({}, "text");
-  const primaryBtn = "#28a745"; // Success green
+  const textSub = useThemeColor({}, "text-subtitle");
+  const primaryBtn = useThemeColor({}, "background-muted");
+  const primaryBtnActive = "#28a745";
 
   const filteredProducts = useMemo(() => {
     if (!search) return [];
@@ -70,19 +72,13 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
   return (
     <View style={styles.sheetContainer}>
-      {/* HEADER SECTION - Based on Inspiration */}
-      <View style={styles.header}>
-        <ThemedText style={styles.title}>Update Stock</ThemedText>
-        <ThemedText style={styles.subtitle}>Add multiple products to your inventory batch.</ThemedText>
-      </View>
-
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
       >
-        {/* SECTION 1: ADDED PRODUCTS */}
+        {/* ADDED PRODUCTS */}
         <View style={styles.section}>
-          <ThemedText type="defaultSemiBold" style={styles.sectionLabel}>Added to Batch</ThemedText>
+          <ThemedText type="defaultSemiBold" style={[styles.sectionLabel, {color: textSub}]}>Added to Batch</ThemedText>
           {stagedItems.length === 0 ? (
             <View style={[styles.emptyContainer, { backgroundColor: bgSecondary }]}>
               <Ionicons name="cart-outline" size={24} color={textColor} style={{ opacity: 0.3 }} />
@@ -113,7 +109,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
         {/* SECTION 2: PINNED/QUICK ADD */}
         <View style={styles.section}>
-          <ThemedText type="defaultSemiBold" style={styles.sectionLabel}>Quick Add</ThemedText>
+          <ThemedText type="defaultSemiBold" style={[styles.sectionLabel, {color: textSub}]}>Quick Add</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pinnedScroll}>
             {pinnedProducts.map((p) => (
               <TouchableOpacity 
@@ -129,7 +125,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
         {/* SECTION 3: SEARCHABLE LIST */}
         <View style={styles.section}>
-          <ThemedText type="defaultSemiBold" style={styles.sectionLabel}>Search Products</ThemedText>
+          <ThemedText type="defaultSemiBold" style={[styles.sectionLabel, {color: textSub}]}>Search Products</ThemedText>
           <View style={[styles.searchWrapper, { backgroundColor: inputBg }]}>
             <Ionicons name="search" size={18} color={textColor} style={{ opacity: 0.5 }} />
             <TextInput
@@ -157,10 +153,10 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
         </View>
       </ScrollView>
 
-      {/* FOOTER: ACTION BUTTON */}
+      {/* ACTION BUTTON */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.primaryButton, { backgroundColor: primaryBtn, opacity: stagedItems.length > 0 ? 1 : 0.5 }]}
+          style={[styles.primaryButton, { backgroundColor: stagedItems.length > 0 ? primaryBtnActive : primaryBtn}]}
           onPress={handleSaveAll}
           disabled={stagedItems.length === 0}
         >
@@ -175,20 +171,11 @@ export default AddStockSheet;
 
 const styles = StyleSheet.create({
   sheetContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 0,
+    paddingTop: 5,
   },
   header: {
     marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    opacity: 0.6,
   },
   scrollContent: {
     paddingBottom: 100,
@@ -199,7 +186,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 14,
     textTransform: "uppercase",
-    opacity: 0.5,
     marginBottom: 10,
     letterSpacing: 1,
   },
@@ -260,7 +246,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    paddingVertical: 20,
     backgroundColor: "white", // Should ideally be theme-aware background
   },
   primaryButton: {

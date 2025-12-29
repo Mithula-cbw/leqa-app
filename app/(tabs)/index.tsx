@@ -3,7 +3,13 @@
 import { StyleSheet, View, ScrollView } from "react-native";
 import React, { useState } from "react";
 import { ThemedView } from "@/components/shared";
-import { AddStockSheet, FloatingActionButtons, HomeHeader, HomeHero, ProductSection } from "@/features/home";
+import {
+  AddStockSheet,
+  FloatingActionButtons,
+  HomeHeader,
+  HomeHero,
+  ProductSection,
+} from "@/features/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useStock } from "@/contexts/StockContext";
 import BottomSheet from "@/components/ui/BottomSheet";
@@ -14,9 +20,9 @@ export default function Index() {
   const { products, loading } = useStock();
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const onAdd = () =>{
-    setSheetVisible(true)
-  }
+  const onAdd = () => {
+    setSheetVisible(true);
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -29,7 +35,7 @@ export default function Index() {
         <HomeHero />
 
         <View style={[styles.content, { backgroundColor: bgSecondary }]}>
-          <ProductSection products={products} isLoading={loading}/>
+          <ProductSection products={products} isLoading={loading} />
           {/* <InventoryTestScreen /> */}
         </View>
       </ScrollView>
@@ -39,10 +45,12 @@ export default function Index() {
         onRemove={() => console.log("Remove/Reduce Stock")}
       />
       <BottomSheet
+        sheetTitle="Update Stock"
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
-        animationDuration={600}
+        animationDuration={400}
       >
+        {/* <View style={styles.test}></View> */}
         <AddStockSheet onFinish={() => setSheetVisible(false)} />
       </BottomSheet>
     </ThemedView>
@@ -64,5 +72,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 36,
     paddingVertical: 10,
     paddingHorizontal: 15,
+  },
+  test: {
+    backgroundColor: "blue",
+    height: 800,
   },
 });
