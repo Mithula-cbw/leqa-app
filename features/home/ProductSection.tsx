@@ -1,13 +1,8 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import React, { useMemo } from "react";
-import { Text, StyleSheet, TouchableOpacity, View } from "react-native";
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from "react-native-draggable-flatlist";
+import { Text, StyleSheet, View, FlatList } from "react-native";
 import { Product } from "@/types/stock";
-import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ProductCard, ProductSkeleton } from "@/components/home";
 import { NoProductsFound } from "@/components/shared";
@@ -16,7 +11,6 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
   products,
   isLoading,
 }) => {
-  const { reorderProducts } = useStock();
   const subColor = useThemeColor({}, "text-subtitle");
 
   const displayData = useMemo(() => {
@@ -32,20 +26,9 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
         .slice(0, 1);
       return [...pinned, ...otherProducts];
     }
+
     return pinned;
   }, [products]);
-
-  const renderItem = ({ item, drag, isActive }: RenderItemParams<Product>) => (
-    <ScaleDecorator>
-      <TouchableOpacity
-        onLongPress={drag}
-        disabled={isActive}
-        activeOpacity={0.9}
-      >
-        <ProductCard item={item} />
-      </TouchableOpacity>
-    </ScaleDecorator>
-  );
 
   if (isLoading) {
     return (
@@ -70,11 +53,10 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
         {products.some((p) => p.is_pinned) ? "Pinned Products" : "Quick View"}
       </Text>
 
-      <DraggableFlatList
+      <FlatList
         data={displayData}
-        onDragEnd={({ data }) => reorderProducts(data)}
         keyExtractor={(item) => `product-${item.id}`}
-        renderItem={renderItem}
+        renderItem={({ item }) => <ProductCard item={item} />}
         scrollEnabled={false}
       />
     </View>

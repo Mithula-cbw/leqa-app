@@ -39,7 +39,7 @@ export const stockController = (db: SQLiteDatabase) => {
           price,
           image ?? null,
           shelfLifeValue ?? 1,
-          shelfLifeUnit ?? "days"
+          shelfLifeUnit ?? "days",
         ]
       );
     },
@@ -68,12 +68,17 @@ export const stockController = (db: SQLiteDatabase) => {
     // Get All Products with their Total Stock (For Main List)
     getAllProducts: async (): Promise<Product[]> => {
       return await db.getAllAsync<Product>(`
-        SELECT p.*, COALESCE(SUM(s.quantity), 0) as total_stock
-        FROM products p
-        LEFT JOIN stock_items s ON p.id = s.product_id
-        GROUP BY p.id
-        ORDER BY p.is_pinned DESC, p.sort_order ASC, p.title ASC
-      `);
+    SELECT 
+      p.*,
+      COALESCE(SUM(s.quantity), 0) AS total_stock
+      FROM products p
+      LEFT JOIN stock_items s ON p.id = s.product_id
+      GROUP BY p.id
+      ORDER BY 
+      p.is_pinned DESC,
+      total_stock DESC,
+      p.title ASC
+  `);
     },
 
     // Get specific batches for a product (For Detail View)
@@ -122,15 +127,6 @@ export const stockController = (db: SQLiteDatabase) => {
         "UPDATE products SET is_pinned = ? WHERE id = ?",
         [isPinned ? 1 : 0, productId]
       );
-    },
-
-    updateSortOrder: async (orders: { id: number; position: number }[]) => {
-      for (const item of orders) {
-        await db.runAsync("UPDATE products SET sort_order = ? WHERE id = ?", [
-          item.position,
-          item.id,
-        ]);
-      }
     },
   };
 };

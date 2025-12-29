@@ -6,7 +6,7 @@ import { View, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-import { ThemedText } from "@/components/shared";
+import { AlertDialog, ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { formatText } from "@/utils/formatText";
@@ -17,68 +17,44 @@ export type ProductAction = "view" | "edit" | "pin" | "empty" | "delete";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    type: "empty" | "delete";
+  }>({ visible: false, type: "delete" });
   const { controller, refreshProducts } = useStock();
 
   const cardBg = useThemeColor({}, "sheet");
   const shadow = useThemeColor({}, "text");
   const bgSecondary = useThemeColor({}, "background-seconary");
 
-  const handleAction = async (action: ProductAction) => {
-    switch (action) {
-      case "view":
-        router.push({ pathname: "/products", params: { id: item.id } });
-        return;
-
-      case "edit":
-        router.push({ pathname: "/products", params: { id: item.id } });
-        return;
-
-      case "pin":
-        await controller.togglePin(item.id, item.is_pinned === 0);
-        break;
-
-      case "empty":
-        Alert.alert(
-          "Empty Stock",
-          `Clear all ${item.total_stock} items from ${item.title}?`,
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Empty",
-              style: "destructive",
-              onPress: async () => {
-                await controller.reduceStock(item.id, item.total_stock);
-                await refreshProducts();
-              },
-            },
-          ]
-        );
-        return;
-
-      case "delete":
-        Alert.alert("Delete Product", "This action cannot be undone.", [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              await controller.deleteProduct(item.id);
-              await refreshProducts();
-            },
-          },
-        ]);
-        return;
+  // to handle confirmation of delete and empty stock dialogs
+  const handleConfirmedAction = async () => {
+    if (alertConfig.type === "delete") {
+      await controller.deleteProduct(item.id);
+    } else {
+      await controller.reduceStock(item.id, item.total_stock);
     }
-
-    // Only refresh for non-confirmed, non-navigation actions
     await refreshProducts();
+  };
+
+  const handleActionRequest = (action: ProductAction) => {
+    if (action === "view")
+      router.push({ pathname: "/products", params: { id: item.id } });
+    if (action === "edit")
+      router.push({ pathname: "/products", params: { id: item.id } });
+    if (action === "pin")
+      controller.togglePin(item.id, item.is_pinned === 0).then(refreshProducts);
+
+    if (action === "empty" || action === "delete") {
+      setAlertConfig({ visible: true, type: action });
+    }
   };
 
   return (
     <>
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => handleAction("view")}
+        onPress={() => handleActionRequest("view")}
         style={[styles.card, { shadowColor: shadow, backgroundColor: cardBg }]}
       >
         <View style={styles.imageContainer}>
@@ -114,19 +90,26 @@ const ProductCard = ({ item }: { item: Product }) => {
         </View>
 
         <View style={styles.content}>
-          <View style={{flex:1, flexDirection: "row", justifyContent: "flex-start", gap: 4}}>
-              <ThemedText
-                numberOfLines={1}
-                type="defaultSemiBold"
-                style={styles.title}
-              >
-                {formatText(item.title, "title")}
-              </ThemedText>
-              {item.is_pinned === 1 && (
-                <View style={styles.pinBadge}>
-                  <AntDesign name="pushpin" size={12} color={shadow} />
-                </View>
-              )}
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              gap: 4,
+            }}
+          >
+            <ThemedText
+              numberOfLines={1}
+              type="defaultSemiBold"
+              style={styles.title}
+            >
+              {formatText(item.title, "title")}
+            </ThemedText>
+            {item.is_pinned === 1 && (
+              <View style={styles.pinBadge}>
+                <AntDesign name="pushpin" size={12} color={shadow} />
+              </View>
+            )}
           </View>
           <ThemedText style={styles.subText}>{item.weight}</ThemedText>
           <View style={styles.stockRow}>
@@ -149,7 +132,21 @@ const ProductCard = ({ item }: { item: Product }) => {
         onClose={() => setMenuVisible(false)}
         product={item}
         isPinned={item.is_pinned === 1}
-        onAction={handleAction}
+        onAction={handleActionRequest}
+      />
+
+      <AlertDialog
+        isVisible={alertConfig.visible}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+        onConfirm={handleConfirmedAction}
+        title={alertConfig.type === "delete" ? "Delete Product" : "Empty Stock"}
+        description={
+          alertConfig.type === "delete"
+            ? `Are you sure you want to delete ${item.title}? This cannot be undone.`
+            : `This will remove all current stock batches for ${item.title}.`
+        }
+        confirmText={alertConfig.type === "delete" ? "Delete" : "Empty Now"}
+        isDestructive={alertConfig.type === "delete"}
       />
     </>
   );
@@ -161,9 +158,9 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderRadius: 16,
-    margin: 6,
+    margin: 5,
     overflow: "hidden",
-    elevation: 4,
+    elevation: 5,
     shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },

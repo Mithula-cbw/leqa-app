@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
 
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 5,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     alignItems: "center",

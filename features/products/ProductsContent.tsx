@@ -3,16 +3,14 @@ import React from "react";
 import { FlatList, View, StyleSheet } from "react-native";
 import { useStock } from "@/contexts/StockContext";
 import { ProductCard } from "@/components/products";
-import { ThemedText } from "@/components/shared";
-import { Ionicons } from "@expo/vector-icons";
+import { NoProductsFound, ThemedText } from "@/components/shared";
 
 const ProductsContent = () => {
   const { products } = useStock();
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="cube-outline" size={48} color="gray" style={{ opacity: 0.3 }} />
-      <ThemedText style={styles.emptyText}>No products yet</ThemedText>
+      <NoProductsFound />
     </View>
   );
 
@@ -48,11 +46,8 @@ const styles = StyleSheet.create({
     padding: 0
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 100,
-    gap: 10,
   },
   emptyText: {
     fontSize: 16,

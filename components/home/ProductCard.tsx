@@ -112,7 +112,7 @@ const ProductCard = ({ item }: { item: Product }) => {
       {/* Reduce modal */}
       <ReductionModal
         isVisible={reduceModal}
-        productTitle={item.title}
+        product={item}
         onClose={() => setReduceModal(false)}
         onConfirm={onReduceConfirm}
       />
@@ -212,16 +212,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 4,
-    height: 120,
-    padding: 10,
+    height: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
     borderRadius: 16,
     marginBottom: 10,
     alignItems: "center",
-    elevation: 3,
+    elevation: 2,
     shadowOpacity: 0.05,
   },
   leftSection: { flexDirection: "column", alignItems: "flex-start" },
-  thumbnail: { width: 100, height: 100, borderRadius: 12, marginRight: 12 },
+  thumbnail: { width: 90, height: 90, borderRadius: 12, marginRight: 6 },
   placeholder: {
     width: 50,
     height: 50,
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
 
   optionsBtn: {
     paddingVertical: 2,
-    marginTop: 2,
+    marginTop: 3,
   },
 
   placeholderText: { opacity: 0.4, fontSize: 18, fontWeight: "bold" },
@@ -253,6 +254,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "flex-start",
     marginLeft: 2,
+    marginTop:2,
   },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   subText: { fontSize: 16, opacity: 0.9, color: "#19a139ff" },
@@ -262,7 +264,8 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     height: "100%",
     borderRadius: 12,
-    alignItems: "flex-start",
+    alignItems: "flex-end",
+    marginRight: 3
   },
   rightInner: {
     flex: 1,
@@ -272,6 +275,7 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: "row",
     alignItems: "flex-end",
+    marginRight: 3,
     borderRadius: 18,
     padding: 3,
   },

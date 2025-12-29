@@ -33,7 +33,6 @@ const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
   onAction,
 }) => {
   const divider = useThemeColor({}, "background-seconary");
-  const textColor = useThemeColor({}, "text");
   const iconMuted = useThemeColor({}, "icon");
 
   const Option = ({
@@ -42,15 +41,18 @@ const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
     type,
     color,
     isLast,
+    disabled = false,
   }: {
     icon: IoniconName;
     label: string;
     type: ProductAction;
     color?: string;
     isLast?: boolean;
+    disabled?: boolean;
   }) => (
     <TouchableOpacity
       activeOpacity={0.7}
+      disabled={disabled}
       style={[
         styles.option,
         !isLast && {
@@ -69,7 +71,13 @@ const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
         color={color || iconMuted}
         style={styles.optionIcon}
       />
-      <ThemedText style={[styles.optionText, color && { color }]}>
+      <ThemedText
+        style={[
+          styles.optionText,
+          disabled && { opacity: 0.4 },
+          color && { color },
+        ]}
+      >
         {label}
       </ThemedText>
     </TouchableOpacity>
@@ -110,7 +118,13 @@ const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
             label={isPinned ? "Unpin" : "Pin to top"}
             type="pin"
           />
-          <Option icon="refresh-outline" color="#ca9f13ff" label={`Empty stock (${product.total_stock} Left)`} type="empty" />
+          <Option
+            disabled={product.total_stock === 0}
+            icon="refresh-outline"
+            color="#ca9f13ff"
+            label={`Empty stock (${product.total_stock} Left)`}
+            type="empty"
+          />
           <Option
             icon="trash-outline"
             label="Delete product"

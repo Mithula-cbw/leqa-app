@@ -8,7 +8,6 @@ import { Product } from "@/types/stock";
 interface StockContextType {
   products: Product[];
   refreshProducts: () => Promise<void>;
-  reorderProducts: (newOrder: Product[]) => Promise<void>;
   loading: boolean;
   controller: ReturnType<typeof stockController>; 
 }
@@ -34,20 +33,6 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const reorderProducts = async (newOrder: Product[]) => {
-    setProducts(newOrder);
-    try {
-      const mappedOrders = newOrder.map((p, index) => ({
-        id: p.id,
-        position: index,
-      }));
-      await controller.updateSortOrder(mappedOrders);
-    } catch (err) {
-      console.error("Failed to save order", err);
-      refreshProducts();
-    }
-  };
-
   useEffect(() => {
     refreshProducts();
   }, []);
@@ -57,7 +42,6 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value={{ 
         products, 
         refreshProducts, 
-        reorderProducts, 
         loading, 
         controller
       }}

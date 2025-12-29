@@ -63,7 +63,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
-    paddingBottom: 120,
   },
   content: {
     flex: 1,
@@ -71,6 +70,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 36,
     borderTopLeftRadius: 36,
     paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 15,    
+    paddingBottom: 120,
   },
 });
