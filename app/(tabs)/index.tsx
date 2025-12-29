@@ -67,14 +67,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    marginTop: 35,
+    marginTop: 25,
     borderTopRightRadius: 36,
     borderTopLeftRadius: 36,
     paddingVertical: 10,
     paddingHorizontal: 15,
-  },
-  test: {
-    backgroundColor: "blue",
-    height: 800,
   },
 });

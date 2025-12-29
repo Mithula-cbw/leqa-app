@@ -60,10 +60,9 @@ export default function AddProductScreen() {
     }
 
     try {
-      // 1. Create Product Blueprint
       const result = await controller.createProduct(
         title,
-        "", // description
+        "",
         weight,
         parseFloat(price),
         image,
@@ -71,7 +70,6 @@ export default function AddProductScreen() {
         shelfLifeUnit
       );
 
-      // 2. Add Initial Stock with Unit-aware Expiry
       if (initialStock > 0) {
         const expiry = new Date();
         if (shelfLifeUnit === "hours") {
@@ -111,7 +109,7 @@ export default function AddProductScreen() {
           )}
         </TouchableOpacity>
 
-        <ThemedText style={styles.label}>Product Name *</ThemedText>
+        <ThemedText style={[styles.label, {marginBottom: -8} ]}>Product Name *</ThemedText>
         <TextInput
           style={[styles.input, { backgroundColor: bgInput }]}
           placeholder="e.g. Oyster Mushrooms"
