@@ -25,7 +25,17 @@ const ProductCard = ({ item }: { item: Product }) => {
 
   const handleIncrease = async () => {
     const expiry = new Date();
-    expiry.setDate(expiry.getDate() + (item.default_shelf_life ?? 7));
+    const value = item.shelf_life_value ?? 1;
+    const unit = item.shelf_life_unit ?? "days";
+
+    if (unit === "years") {
+      expiry.setFullYear(expiry.getFullYear() + value);
+    } else if (unit === "hours") {
+      expiry.setHours(expiry.getHours() + value);
+    } else {
+      expiry.setDate(expiry.getDate() + value);
+    }
+
     await controller.addStockBatch(item.id, 1, expiry.toISOString());
     await refreshProducts();
   };
@@ -162,7 +172,7 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    marginLeft: 2
+    marginLeft: 2,
   },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   subText: { fontSize: 16, opacity: 0.9, color: "#19a139ff" },

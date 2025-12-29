@@ -27,7 +27,8 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         weight TEXT,
         image TEXT,
         price REAL DEFAULT 0.0,
-        default_shelf_life INTEGER, -- days until expiry,
+        shelf_life_value INTEGER, 
+        shelf_life_unit TEXT CHECK(shelf_life_unit IN ('days', 'hours', 'years')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         is_pinned INTEGER DEFAULT 0, -- 0 for false, 1 for true,
         sort_order INTEGER DEFAULT 0

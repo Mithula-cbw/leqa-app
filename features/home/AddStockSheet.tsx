@@ -46,17 +46,25 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
   const addProductToStaging = (product: Product) => {
     if (stagedItems.find((item) => item.product.id === product.id)) return;
-    const defaultExpiry = new Date();
-    defaultExpiry.setDate(
-      defaultExpiry.getDate() + (product.default_shelf_life ?? 7)
-    );
+
+    const expiry = new Date();
+    const value = product.shelf_life_value ?? 7;
+    const unit = product.shelf_life_unit ?? "days";
+
+    if (unit === "years") {
+      expiry.setFullYear(expiry.getFullYear() + value);
+    } else if (unit === "hours") {
+      expiry.setHours(expiry.getHours() + value);
+    } else {
+      expiry.setDate(expiry.getDate() + value);
+    }
 
     setStagedItems([
       ...stagedItems,
       {
         product,
         quantity: 1,
-        expiryDate: defaultExpiry.toISOString().split("T")[0],
+        expiryDate: expiry.toISOString(),
       },
     ]);
     setSearch("");

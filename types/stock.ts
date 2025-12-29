@@ -8,7 +8,8 @@ export interface Product {
   price: number;
   image?: string | null;
   total_stock: number;
-  default_shelf_life?: number | null;
+  shelf_life_value: number | null;
+  shelf_life_unit: "days" | "hours" | "years"; // New
   is_pinned: 0 | 1;    
   sort_order: number;
 }

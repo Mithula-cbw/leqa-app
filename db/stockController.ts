@@ -12,7 +12,8 @@ export const stockController = (db: SQLiteDatabase) => {
       weight: string,
       price: number,
       image?: string | null,
-      defaultShelfLife?: number
+      shelfLifeValue?: number,
+      shelfLifeUnit?: "days" | "hours" | "years" | null
     ) => {
       const existing = await db.getFirstAsync<{ id: number }>(
         `
@@ -30,14 +31,15 @@ export const stockController = (db: SQLiteDatabase) => {
       }
 
       return await db.runAsync(
-        "INSERT INTO products (title, description, weight, price, image, default_shelf_life) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (title, description, weight, price, image, shelf_life_value, shelf_life_unit ) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
           title,
           description,
           weight,
           price,
           image ?? null,
-          defaultShelfLife ?? null,
+          shelfLifeValue ?? 1,
+          shelfLifeUnit ?? "days"
         ]
       );
     },
