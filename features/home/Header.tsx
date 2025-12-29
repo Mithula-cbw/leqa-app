@@ -16,7 +16,7 @@ const HomeHeader = () => {
   return (
     <ThemedView style={styles.container}>
       {!user ? (
-        <ThemedView style={styles.row}>
+        <ThemedView style={[styles.row, styles.skelton]}>
           <SkeletonBox width={50} height={50} borderRadius={25} />
           <ThemedView style={styles.textContainer}>
             <SkeletonBox width={140} height={20} />
@@ -61,6 +61,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  skelton: {
+    opacity: 0.35,
   },
   textContainer: {
     marginLeft: 15,

@@ -10,7 +10,7 @@ import {
 import { ThemedText } from "@/components/shared";
 import { useStock } from "@/contexts/StockContext";
 import { Product } from "@/types/stock";
-import { AddedProductItem } from "@/components/home";
+import { AddedProductItem, AddQuickProductChip } from "@/components/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -49,7 +49,9 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const addProductToStaging = (product: Product) => {
     if (stagedItems.find((item) => item.product.id === product.id)) return;
     const defaultExpiry = new Date();
-    defaultExpiry.setDate(defaultExpiry.getDate() + (product.default_shelf_life ?? 7));
+    defaultExpiry.setDate(
+      defaultExpiry.getDate() + (product.default_shelf_life ?? 7)
+    );
 
     setStagedItems([
       ...stagedItems,
@@ -64,7 +66,11 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
   const handleSaveAll = async () => {
     for (const item of stagedItems) {
-      await controller.addStockBatch(item.product.id, item.quantity, item.expiryDate);
+      await controller.addStockBatch(
+        item.product.id,
+        item.quantity,
+        item.expiryDate
+      );
     }
     await refreshProducts();
     onFinish();
@@ -72,17 +78,31 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
   return (
     <View style={styles.sheetContainer}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* ADDED PRODUCTS */}
         <View style={styles.section}>
-          <ThemedText type="defaultSemiBold" style={[styles.sectionLabel, {color: textSub}]}>Added to Batch</ThemedText>
+          <ThemedText
+            type="defaultSemiBold"
+            style={[styles.sectionLabel, { color: textSub }]}
+          >
+            Added to Batch
+          </ThemedText>
           {stagedItems.length === 0 ? (
-            <View style={[styles.emptyContainer, { backgroundColor: bgSecondary }]}>
-              <Ionicons name="cart-outline" size={24} color={textColor} style={{ opacity: 0.3 }} />
-              <ThemedText style={styles.emptyText}>No products selected yet</ThemedText>
+            <View
+              style={[styles.emptyContainer, { backgroundColor: bgSecondary }]}
+            >
+              <Ionicons
+                name="cart-outline"
+                size={24}
+                color={textColor}
+                style={{ opacity: 0.3 }}
+              />
+              <ThemedText style={styles.emptyText}>
+                No products selected yet
+              </ThemedText>
             </View>
           ) : (
             stagedItems.map((item, index) => (
@@ -101,33 +121,51 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
                   newItems[index].expiryDate = date;
                   setStagedItems(newItems);
                 }}
-                onRemove={() => setStagedItems(stagedItems.filter((_, i) => i !== index))}
+                onRemove={() =>
+                  setStagedItems(stagedItems.filter((_, i) => i !== index))
+                }
               />
             ))
           )}
         </View>
-
-        {/* SECTION 2: PINNED/QUICK ADD */}
+        {/* PINNED/QUICK ADD */}
         <View style={styles.section}>
-          <ThemedText type="defaultSemiBold" style={[styles.sectionLabel, {color: textSub}]}>Quick Add</ThemedText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pinnedScroll}>
+          <ThemedText
+            type="defaultSemiBold"
+            style={[styles.sectionLabel, { color: textSub }]}
+          >
+            Quick Add
+          </ThemedText>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 10 }}
+          >
             {pinnedProducts.map((p) => (
-              <TouchableOpacity 
-                key={p.id} 
-                style={[styles.chip, { backgroundColor: bgSecondary }]}
-                onPress={() => addProductToStaging(p)}
-              >
-                <ThemedText style={styles.chipText}>{p.title}</ThemedText>
-              </TouchableOpacity>
+              <AddQuickProductChip
+                key={p.id}
+                product={p}
+                onPress={addProductToStaging}
+              />
             ))}
           </ScrollView>
         </View>
-
-        {/* SECTION 3: SEARCHABLE LIST */}
+        
+        {/* SEARCHABLE LIST */}
         <View style={styles.section}>
-          <ThemedText type="defaultSemiBold" style={[styles.sectionLabel, {color: textSub}]}>Search Products</ThemedText>
+          <ThemedText
+            type="defaultSemiBold"
+            style={[styles.sectionLabel, { color: textSub }]}
+          >
+            Search Products
+          </ThemedText>
           <View style={[styles.searchWrapper, { backgroundColor: inputBg }]}>
-            <Ionicons name="search" size={18} color={textColor} style={{ opacity: 0.5 }} />
+            <Ionicons
+              name="search"
+              size={18}
+              color={textColor}
+              style={{ opacity: 0.5 }}
+            />
             <TextInput
               style={[styles.input, { color: textColor }]}
               placeholder="Search by name..."
@@ -136,7 +174,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
               onChangeText={setSearch}
             />
           </View>
-          
+
           {filteredProducts.map((product) => (
             <TouchableOpacity
               key={product.id}
@@ -156,11 +194,19 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
       {/* ACTION BUTTON */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.primaryButton, { backgroundColor: stagedItems.length > 0 ? primaryBtnActive : primaryBtn}]}
+          style={[
+            styles.primaryButton,
+            {
+              backgroundColor:
+                stagedItems.length > 0 ? primaryBtnActive : primaryBtn,
+            },
+          ]}
           onPress={handleSaveAll}
           disabled={stagedItems.length === 0}
         >
-          <ThemedText style={styles.buttonText}>Confirm & Save Batch</ThemedText>
+          <ThemedText style={styles.buttonText}>
+            Confirm & Save Batch
+          </ThemedText>
         </TouchableOpacity>
       </View>
     </View>
@@ -205,17 +251,43 @@ const styles = StyleSheet.create({
   pinnedScroll: {
     flexDirection: "row",
   },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 100,
-    marginRight: 8,
+  quickCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 8,
+    borderRadius: 16,
+    width: 220, // Fixed width for horizontal scrolling consistency
+    gap: 10,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: "rgba(0,0,0,0.03)",
   },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "500",
+  quickThumb: {
+    width: 45,
+    height: 45,
+    borderRadius: 10,
+  },
+  quickPlaceholder: {
+    width: 45,
+    height: 45,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  quickSubText: {
+    fontSize: 12,
+    opacity: 0.6,
+  },
+  quickAddIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   searchWrapper: {
     flexDirection: "row",
@@ -247,7 +319,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingVertical: 20,
-    backgroundColor: "white", // Should ideally be theme-aware background
   },
   primaryButton: {
     borderRadius: 14,
@@ -260,8 +331,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   buttonText: {
-    color: "#FFF",
     fontWeight: "700",
     fontSize: 16,
+    color: "#fff",
   },
 });
