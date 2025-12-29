@@ -2,12 +2,12 @@ import { SQLiteDatabase } from "expo-sqlite";
 
 export const initializeDatabase = async (db: SQLiteDatabase) => {
   try {
-    await db.execAsync(`
-    DROP TABLE IF EXISTS stock_items;
-    DROP TABLE IF EXISTS products;
-    DROP TABLE IF EXISTS users;
-`);
-    console.log("The DB was reset");
+//     await db.execAsync(`
+//     DROP TABLE IF EXISTS stock_items;
+//     DROP TABLE IF EXISTS products;
+//     DROP TABLE IF EXISTS users;
+// `);
+//     console.log("The DB was reset");
 
     await db.execAsync(`PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;`);
 

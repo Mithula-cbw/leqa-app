@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Dimensions,
 } from "react-native";
 import { ThemedText } from "@/components/shared";
 import { useStock } from "@/contexts/StockContext";
@@ -13,8 +12,6 @@ import { Product } from "@/types/stock";
 import { AddedProductItem, AddQuickProductChip } from "@/components/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface StagedProduct {
   product: Product;
@@ -150,7 +147,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
             ))}
           </ScrollView>
         </View>
-        
+
         {/* SEARCHABLE LIST */}
         <View style={styles.section}>
           <ThemedText

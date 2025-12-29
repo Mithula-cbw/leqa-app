@@ -9,7 +9,7 @@ import DraggableFlatList, {
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { ProductCard } from "@/components/home";
+import { ProductCard, ProductSkeleton } from "@/components/home";
 import { NoProductsFound } from "@/components/shared";
 
 const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
@@ -18,12 +18,21 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
 }) => {
   const { reorderProducts } = useStock();
   const subColor = useThemeColor({}, "text-subtitle");
-
+  
   const displayData = useMemo(() => {
     const pinned = products.filter((p) => p.is_pinned === 1);
-    return pinned.length > 0
-      ? pinned
-      : products.filter((p) => p.total_stock > 0).slice(0, 2);
+
+    if (pinned.length === 0) {
+      return products.slice(0, 2);
+    }
+
+    if (pinned.length === 1) {
+      const otherProducts = products
+        .filter((p) => p.id !== pinned[0].id)
+        .slice(0, 2);
+      return [...pinned, ...otherProducts];
+    }
+    return pinned;
   }, [products]);
 
   const renderItem = ({ item, drag, isActive }: RenderItemParams<Product>) => (
@@ -37,6 +46,19 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
       </TouchableOpacity>
     </ScaleDecorator>
   );
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={[styles.sectionTitle, { color: subColor }]}>
+          {products.some((p) => p.is_pinned) ? "Pinned Products" : "Quick View"}
+        </Text>
+
+        <ProductSkeleton />
+        <ProductSkeleton />
+      </View>
+    );
+  }
 
   if (!isLoading && products.length === 0) {
     return <NoProductsFound />;

@@ -117,7 +117,7 @@ const ProductCard = ({ item }: { item: Product }) => {
               <ThemedText
                 type="defaultSemiBold"
                 style={{
-                  color: item.total_stock === 0 ? "#44ff44" : undefined,
+                  color: item.total_stock === 0 ? "#000000ff" : undefined,
                 }}
               >
                 {item.total_stock}
