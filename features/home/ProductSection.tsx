@@ -18,7 +18,7 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
 }) => {
   const { reorderProducts } = useStock();
   const subColor = useThemeColor({}, "text-subtitle");
-  
+
   const displayData = useMemo(() => {
     const pinned = products.filter((p) => p.is_pinned === 1);
 
@@ -29,7 +29,7 @@ const ProductSection: React.FC<{ products: Product[]; isLoading: boolean }> = ({
     if (pinned.length === 1) {
       const otherProducts = products
         .filter((p) => p.id !== pinned[0].id)
-        .slice(0, 2);
+        .slice(0, 1);
       return [...pinned, ...otherProducts];
     }
     return pinned;

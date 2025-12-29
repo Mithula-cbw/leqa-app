@@ -1,74 +1,136 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import React, { useState } from "react";
-import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Image,
+  TouchableOpacity,
+  Pressable,
+  Alert,
+} from "react-native";
 import { ReductionModal, ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
 import { formatText } from "@/utils/formatText";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 import ProductSkeleton from "./ProductSkeleton";
+import { ProductAction } from "../products/ProductCard";
+import ProductOptionsModal from "../products/ProductOptionsModal";
 
 const ProductCard = ({ item }: { item: Product }) => {
-  const goToProduct = () => {
-    router.push(`/products`);
-    console.log("prodcut", item.id); // dev-log
-  };
   const { loading, controller, refreshProducts } = useStock();
-  const [modalVisible, setModalVisible] = useState(false);
+
+  const [reduceModal, setReduceModal] = useState(false);
+  const [optionsVisible, setOptionsVisible] = useState(false);
 
   const cardBg = useThemeColor({}, "sheet");
   const bgSecondary = useThemeColor({}, "background-seconary");
-  const chevronClr = useThemeColor({}, "icon");
+  const iconColor = useThemeColor({}, "icon");
+
+  const goToProduct = () => {
+    router.push({ pathname: "/products", params: { id: item.id } });
+  };
 
   const handleIncrease = async () => {
     const expiry = new Date();
     const value = item.shelf_life_value ?? 1;
     const unit = item.shelf_life_unit ?? "days";
 
-    if (unit === "years") {
-      expiry.setFullYear(expiry.getFullYear() + value);
-    } else if (unit === "hours") {
-      expiry.setHours(expiry.getHours() + value);
-    } else {
-      expiry.setDate(expiry.getDate() + value);
-    }
+    if (unit === "years") expiry.setFullYear(expiry.getFullYear() + value);
+    else if (unit === "hours") expiry.setHours(expiry.getHours() + value);
+    else expiry.setDate(expiry.getDate() + value);
 
     await controller.addStockBatch(item.id, 1, expiry.toISOString());
     await refreshProducts();
   };
 
-  const onReduceConfirm = async (type: "sell" | "waste" | "delete") => {
-    console.log(`Action: ${type.toUpperCase()} - Product: ${item.title}`);
+  const handleAction = async (action: ProductAction) => {
+    switch (action) {
+      case "view":
+        goToProduct();
+        break;
 
+      case "edit":
+        router.push({ pathname: "/products", params: { id: item.id } });
+        break;
+
+      case "pin":
+        await controller.togglePin(item.id, item.is_pinned === 0);
+        break;
+
+      case "empty":
+        Alert.alert(
+          "Empty Stock",
+          `Remove all ${item.total_stock} items from ${item.title}?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Empty",
+              style: "destructive",
+              onPress: async () => {
+                await controller.reduceStock(item.id, item.total_stock);
+                await refreshProducts();
+              },
+            },
+          ]
+        );
+        return;
+
+      case "delete":
+        Alert.alert("Delete Product", "This action cannot be undone.", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              await controller.deleteProduct(item.id);
+              await refreshProducts();
+            },
+          },
+        ]);
+        return;
+    }
+
+    await refreshProducts();
+  };
+
+  const onReduceConfirm = async () => {
     if (item.total_stock > 0) {
       await controller.reduceStock(item.id, 1);
       await refreshProducts();
     }
-    setModalVisible(false);
+    setReduceModal(false);
   };
 
-  if (loading) {
-    return (
-      <View>
-        <ProductSkeleton />
-      </View>
-    );
-  }
+  if (loading) return <ProductSkeleton />;
 
   return (
     <>
+      {/* Reduce modal */}
       <ReductionModal
-        isVisible={modalVisible}
+        isVisible={reduceModal}
         productTitle={item.title}
-        onClose={() => setModalVisible(false)}
+        onClose={() => setReduceModal(false)}
         onConfirm={onReduceConfirm}
       />
 
-      <View style={[styles.card, { backgroundColor: cardBg }]}>
-        {/* left side */}
+      {/* Options modal */}
+      <ProductOptionsModal
+        isVisible={optionsVisible}
+        onClose={() => setOptionsVisible(false)}
+        product={item}
+        isPinned={item.is_pinned === 1}
+        onAction={handleAction}
+      />
+
+      <Pressable
+        onPress={goToProduct}
+        style={[styles.card, { backgroundColor: cardBg }]}
+      >
+        {/* LEFT */}
         <View style={styles.leftSection}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.thumbnail} />
@@ -83,29 +145,39 @@ const ProductCard = ({ item }: { item: Product }) => {
           )}
         </View>
 
-        {/* right side */}
+        {/* RIGHT */}
         <View style={styles.rightSection}>
           <View style={styles.rightInner}>
             <View style={styles.info}>
-              <ThemedText type="defaultSemiBold" numberOfLines={1}>
-                {formatText(item.title, "title")}
-              </ThemedText>
-              <View style={styles.detailsRow}>
-                <ThemedText style={styles.subText}>{item.weight}</ThemedText>
+              <View style={styles.titleRow}>
+                <ThemedText numberOfLines={1} type="defaultSemiBold">
+                  {formatText(item.title, "title")}
+                </ThemedText>
+
+                {item.is_pinned === 1 && (
+                  <View style={styles.pinBadge}>
+                    <AntDesign name="pushpin" size={12} color={iconColor} />
+                  </View>
+                )}
               </View>
+
+              <ThemedText style={styles.subText}>{item.weight}</ThemedText>
             </View>
+
+            {/* OPTIONS */}
             <TouchableOpacity
-              onPress={goToProduct}
-              style={styles.caretBtn}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => setOptionsVisible(true)}
+              hitSlop={10}
+              style={styles.optionsBtn}
             >
-              <Ionicons name="chevron-forward" size={22} color={chevronClr} />
+              <Ionicons name="ellipsis-vertical" size={18} color={iconColor} />
             </TouchableOpacity>
           </View>
 
+          {/* CONTROLS */}
           <View style={[styles.controls, { backgroundColor: bgSecondary }]}>
             <TouchableOpacity
-              onPress={() => setModalVisible(true)}
+              onPress={() => setReduceModal(true)}
               disabled={item.total_stock <= 0}
               style={[
                 styles.btn,
@@ -117,14 +189,7 @@ const ProductCard = ({ item }: { item: Product }) => {
             </TouchableOpacity>
 
             <View style={styles.stockCount}>
-              <ThemedText
-                type="defaultSemiBold"
-                style={{
-                  color: item.total_stock === 0 ? "#000000ff" : undefined,
-                }}
-              >
-                {item.total_stock}
-              </ThemedText>
+              <ThemedText type="defaultSemiBold">{item.total_stock}</ThemedText>
             </View>
 
             <TouchableOpacity
@@ -135,7 +200,7 @@ const ProductCard = ({ item }: { item: Product }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </Pressable>
     </>
   );
 };
@@ -165,6 +230,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  pinBadge: {
+    padding: 4,
+    borderRadius: 8,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+
+  optionsBtn: {
+    paddingVertical: 2,
+    marginTop: 2,
+  },
+
   placeholderText: { opacity: 0.4, fontSize: 18, fontWeight: "bold" },
   info: {
     flex: 1,
