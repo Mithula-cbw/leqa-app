@@ -55,35 +55,34 @@ export const stockController = (db: SQLiteDatabase) => {
       );
     },
 
+    // Add Stock Batch (Date + Time)
+    // inside stockController.ts
 
-     // Add Stock Batch (Date + Time)
     addStockBatch: async (
       productId: number,
       quantity: number,
-      expiryAt: Date
+      expiryAt: Date,
+      customBatchNumber?: number,
     ) => {
       if (!(expiryAt instanceof Date)) {
         throw new Error("expiryAt must be a Date");
       }
 
-      const result = await db.getFirstAsync<{ maxBatch: number }>(
-        `
-        SELECT MAX(batch_number) as maxBatch
-        FROM stock_items
-        WHERE product_id = ?
-        `,
-        [productId]
-      );
+      let batchToUse: number;
 
-      const nextBatchNumber = (result?.maxBatch || 0) + 1;
+      if (customBatchNumber) {
+        batchToUse = customBatchNumber;
+      } else {
+        const result = await db.getFirstAsync<{ maxBatch: number }>(
+          `SELECT MAX(batch_number) as maxBatch FROM stock_items WHERE product_id = ?`,
+          [productId]
+        );
+        batchToUse = (result?.maxBatch || 0) + 1;
+      }
 
       return await db.runAsync(
-        `
-        INSERT INTO stock_items
-          (product_id, batch_number, quantity, expiry_at)
-        VALUES (?, ?, ?, ?)
-        `,
-        [productId, nextBatchNumber, quantity, toDbDate(expiryAt)]
+        `INSERT INTO stock_items (product_id, batch_number, quantity, expiry_at) VALUES (?, ?, ?, ?)`,
+        [productId, batchToUse, quantity, toDbDate(expiryAt)]
       );
     },
 
@@ -178,6 +177,29 @@ export const stockController = (db: SQLiteDatabase) => {
         `,
         [isPinned ? 1 : 0, productId]
       );
+    },
+
+    // Fetch every batch in the database (for Context)
+    getAllBatches: async (): Promise<StockItem[]> => {
+      const rows = await db.getAllAsync<any>(
+        `SELECT * FROM stock_items ORDER BY created_at DESC`
+      );
+
+      return rows.map((row) => ({
+        id: row.id,
+        product_id: row.product_id,
+        batch_number: row.batch_number,
+        quantity: row.quantity,
+        expiry_at: fromDbDate(row.expiry_at),
+        created_at: new Date(row.created_at),
+      }));
+    },
+
+    // Delete a specific batch by ID
+    deleteBatch: async (batchId: number) => {
+      return await db.runAsync("DELETE FROM stock_items WHERE id = ?", [
+        batchId,
+      ]);
     },
   };
 };

@@ -70,15 +70,26 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   };
 
   const handleSaveAll = async () => {
-    for (const item of stagedItems) {
-      await controller.addStockBatch(
-        item.product.id,
-        item.quantity,
-        item.expiryDate
-      );
+    if (stagedItems.length === 0) return;
+
+    const sharedBatchId = Math.floor(Date.now() / 1000);
+
+    try {
+      for (const item of stagedItems) {
+        await controller.addStockBatch(
+          item.product.id,
+          item.quantity,
+          item.expiryDate,
+          sharedBatchId 
+        );
+      }
+
+      await refreshProducts();
+      onFinish();
+    } catch (error) {
+      console.error("Failed to save batch", error);
+      // Add alert here if needed
     }
-    await refreshProducts();
-    onFinish();
   };
 
   return (

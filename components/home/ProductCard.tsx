@@ -44,7 +44,10 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const goToProduct = () => {
-    router.push({ pathname: "/products", params: { id: item.id } });
+    router.push({
+      pathname: "/products/[id]",
+      params: { id: item.id.toString() },
+    });
   };
 
   const handleIncrease = async () => {

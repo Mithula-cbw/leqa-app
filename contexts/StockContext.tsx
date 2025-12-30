@@ -1,33 +1,48 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import { useSQLiteContext } from "expo-sqlite";
 import { stockController } from "@/db/stockController";
-import { Product } from "@/types/stock";
+import { Product, StockItem } from "@/types/stock";
 
 interface StockContextType {
   products: Product[];
+  batches: StockItem[];
   refreshProducts: () => Promise<void>;
   loading: boolean;
-  controller: ReturnType<typeof stockController>; 
+  controller: ReturnType<typeof stockController>;
 }
 
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
-export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const StockProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const db = useSQLiteContext();
 
   const controller = useMemo(() => stockController(db), [db]);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [batches, setBatches] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refreshProducts = async () => {
     try {
-      const data = await controller.getAllProducts();
-      setProducts(data);
+      const [productData, batchData] = await Promise.all([
+        controller.getAllProducts(),
+        controller.getAllBatches(),
+      ]);
+
+      setProducts(productData);
+      setBatches(batchData);
     } catch (err) {
-      console.error("Failed to fetch products", err);
+      console.error("Failed to fetch stock data", err);
     } finally {
       setLoading(false);
     }
@@ -39,11 +54,12 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StockContext.Provider
-      value={{ 
-        products, 
-        refreshProducts, 
-        loading, 
-        controller
+      value={{
+        products,
+        batches,
+        refreshProducts,
+        loading,
+        controller,
       }}
     >
       {children}

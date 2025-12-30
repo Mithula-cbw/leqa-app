@@ -40,7 +40,10 @@ const ProductCard = ({ item }: { item: Product }) => {
 
   const handleActionRequest = (action: ProductAction) => {
     if (action === "view")
-      router.push({ pathname: "/products", params: { id: item.id } });
+      router.push({
+        pathname: "/products/[id]",
+        params: { id: item.id.toString() },
+      });
     if (action === "edit")
       router.push({ pathname: "/products", params: { id: item.id } });
     if (action === "pin")

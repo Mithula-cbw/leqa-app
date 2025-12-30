@@ -19,7 +19,7 @@ export default function InventoryTestScreen() {
   const handleAddBatch = async (productId: number) => {
     const expiry = new Date();
     expiry.setDate(expiry.getDate() + 7);
-    await controller.addStockBatch(productId, 5, expiry.toISOString());
+    await controller.addStockBatch(productId, 5, expiry);
     await refreshProducts();
   };
 
