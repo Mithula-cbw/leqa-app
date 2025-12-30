@@ -12,11 +12,13 @@ import { Product } from "@/types/stock";
 import { AddedProductItem, AddQuickProductChip } from "@/components/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
+import { addTime } from "@/utils/addTime";
 
 interface StagedProduct {
   product: Product;
   quantity: number;
   expiryDate: Date;
+  warnDate: Date;
 }
 
 const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
@@ -46,24 +48,22 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const addProductToStaging = (product: Product) => {
     if (stagedItems.find((item) => item.product.id === product.id)) return;
 
-    const expiry = new Date();
-    const value = product.shelf_life_value ?? 7;
-    const unit = product.shelf_life_unit ?? "days";
+    const shelfValue = product.shelf_life_value ?? 7;
+    const shelfUnit = product.shelf_life_unit ?? "days";
+    const expiryDate = addTime(new Date(), shelfValue, shelfUnit);
 
-    if (unit === "years") {
-      expiry.setFullYear(expiry.getFullYear() + value);
-    } else if (unit === "hours") {
-      expiry.setHours(expiry.getHours() + value);
-    } else {
-      expiry.setDate(expiry.getDate() + value);
-    }
+    const warnValue =
+      product.warning_period_value ?? Math.ceil(shelfValue * 0.1);
+    const warnUnit = product.warning_period_unit ?? "days";
+    const warnDate = addTime(expiryDate, -warnValue, warnUnit);
 
     setStagedItems([
       ...stagedItems,
       {
         product,
         quantity: 1,
-        expiryDate: expiry,
+        expiryDate: expiryDate,
+        warnDate: warnDate,
       },
     ]);
     setSearch("");
@@ -80,7 +80,8 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
           item.product.id,
           item.quantity,
           item.expiryDate,
-          sharedBatchId 
+          item.warnDate,
+          sharedBatchId
         );
       }
 
@@ -88,7 +89,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
       onFinish();
     } catch (error) {
       console.error("Failed to save batch", error);
-      // Add alert here if needed
+      // dev
     }
   };
 
@@ -126,6 +127,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
                 product={item.product}
                 quantity={item.quantity}
                 expiryDate={item.expiryDate}
+                warnDate={item.warnDate}
                 onUpdateQty={(qty) => {
                   const newItems = [...stagedItems];
                   newItems[index].quantity = qty;
@@ -134,6 +136,11 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
                 onUpdateExpiry={(date) => {
                   const newItems = [...stagedItems];
                   newItems[index].expiryDate = date;
+                  setStagedItems(newItems);
+                }}
+                onUpdateWarn={(date) => {
+                  const newItems = [...stagedItems];
+                  newItems[index].warnDate = date;
                   setStagedItems(newItems);
                 }}
                 onRemove={() =>

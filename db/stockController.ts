@@ -20,7 +20,9 @@ export const stockController = (db: SQLiteDatabase) => {
       price: number,
       image?: string | null,
       shelfLifeValue?: number,
-      shelfLifeUnit?: "days" | "hours" | "years" | null
+      shelfLifeUnit?: "days" | "hours" | "years" | null,
+      warningPeriodValue?: number,
+      warningPeriodUnit?: "days" | "hours" | "years" | null
     ) => {
       const existing = await db.getFirstAsync<{ id: number }>(
         `
@@ -49,20 +51,21 @@ export const stockController = (db: SQLiteDatabase) => {
           weight,
           price,
           image ?? null,
-          shelfLifeValue ?? 1,
+          shelfLifeValue ?? 7,
           shelfLifeUnit ?? "days",
+          warningPeriodValue ?? 1,
+          warningPeriodUnit ?? "days",
         ]
       );
     },
 
     // Add Stock Batch (Date + Time)
-    // inside stockController.ts
-
     addStockBatch: async (
       productId: number,
       quantity: number,
       expiryAt: Date,
-      customBatchNumber?: number,
+      warnAt: Date,
+      customBatchNumber?: number
     ) => {
       if (!(expiryAt instanceof Date)) {
         throw new Error("expiryAt must be a Date");
@@ -81,8 +84,8 @@ export const stockController = (db: SQLiteDatabase) => {
       }
 
       return await db.runAsync(
-        `INSERT INTO stock_items (product_id, batch_number, quantity, expiry_at) VALUES (?, ?, ?, ?)`,
-        [productId, batchToUse, quantity, toDbDate(expiryAt)]
+        `INSERT INTO stock_items (product_id, batch_number, quantity, expiry_at, warn_at) VALUES (?, ?, ?, ?, ?)`,
+        [productId, batchToUse, quantity, toDbDate(expiryAt), toDbDate(warnAt)]
       );
     },
 
@@ -109,7 +112,7 @@ export const stockController = (db: SQLiteDatabase) => {
         SELECT *
         FROM stock_items
         WHERE product_id = ?
-        ORDER BY expiry_at ASC
+        ORDER BY warn_at DESC
         `,
         [productId]
       );
@@ -120,6 +123,7 @@ export const stockController = (db: SQLiteDatabase) => {
         batch_number: row.batch_number,
         quantity: row.quantity,
         expiry_at: fromDbDate(row.expiry_at),
+        warn_at: fromDbDate(row.warn_at),
         created_at: new Date(row.created_at),
       }));
     },
@@ -191,6 +195,7 @@ export const stockController = (db: SQLiteDatabase) => {
         batch_number: row.batch_number,
         quantity: row.quantity,
         expiry_at: fromDbDate(row.expiry_at),
+        warn_at: fromDbDate(row.warn_at),
         created_at: new Date(row.created_at),
       }));
     },

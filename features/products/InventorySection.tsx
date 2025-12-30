@@ -12,6 +12,8 @@ interface Props {
 const InventorySection = ({ productId }: Props) => {
   const { batches, controller, refreshProducts } = useStock();
 
+  console.log("batches", batches) // dev-log
+
   const sections = useMemo(() => {
     const productBatches = batches.filter((b) => b.product_id === productId);
     const groups: { [key: string]: { [batchNum: string]: StockItem[] } } = {};

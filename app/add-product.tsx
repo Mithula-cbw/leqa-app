@@ -26,7 +26,9 @@ export default function AddProductScreen() {
     weight: "",
     price: "",
     shelfLifeValue: 7,
-    shelfLifeUnit: "days" as "days" | "hours",
+    shelfLifeUnit: "days" as "days" | "hours" | "years",
+    warningPeriodValue: 1,
+    warningPeriodUnit: "days" as "days" | "hours" | "years",
     initialStock: 0,
     image: null as string | null,
   });
@@ -50,6 +52,8 @@ export default function AddProductScreen() {
       price,
       shelfLifeValue,
       shelfLifeUnit,
+      warningPeriodValue,
+      warningPeriodUnit,
       initialStock,
       image,
     } = form;
@@ -67,21 +71,35 @@ export default function AddProductScreen() {
         parseFloat(price),
         image,
         shelfLifeValue,
-        shelfLifeUnit
+        shelfLifeUnit,
+        warningPeriodValue,
+        warningPeriodUnit
       );
 
       if (initialStock > 0) {
-        const expiry = new Date();
+        const expiryDate = new Date();
         if (shelfLifeUnit === "hours") {
-          expiry.setHours(expiry.getHours() + shelfLifeValue);
+          expiryDate.setHours(expiryDate.getHours() + shelfLifeValue);
+        } else if (shelfLifeUnit === "years") {
+          expiryDate.setFullYear(expiryDate.getFullYear() + shelfLifeValue);
         } else {
-          expiry.setDate(expiry.getDate() + shelfLifeValue);
+          expiryDate.setDate(expiryDate.getDate() + shelfLifeValue);
+        }
+
+        const warnDate = new Date(expiryDate);
+        if (warningPeriodUnit === "hours") {
+          warnDate.setHours(warnDate.getHours() - warningPeriodValue);
+        } else if (warningPeriodUnit === "years") {
+          warnDate.setFullYear(warnDate.getFullYear() - warningPeriodValue);
+        } else {
+          warnDate.setDate(warnDate.getDate() - warningPeriodValue);
         }
 
         await controller.addStockBatch(
           result.lastInsertRowId,
           initialStock,
-          expiry
+          expiryDate,
+          warnDate
         );
       }
 
@@ -109,7 +127,9 @@ export default function AddProductScreen() {
           )}
         </TouchableOpacity>
 
-        <ThemedText style={[styles.label, {marginBottom: -8} ]}>Product Name *</ThemedText>
+        <ThemedText style={[styles.label, { marginBottom: -8 }]}>
+          Product Name *
+        </ThemedText>
         <TextInput
           style={[styles.input, { backgroundColor: bgInput }]}
           placeholder="e.g. Oyster Mushrooms"
@@ -172,6 +192,47 @@ export default function AddProductScreen() {
                       style={[
                         styles.unitText,
                         form.shelfLifeUnit === unit && styles.activeUnitText,
+                      ]}
+                    >
+                      {unit}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.row}>
+          {/* Warning Period Picker */}
+          <View style={{ flex: 1.2 }}>
+            <ThemedText style={styles.label}>Warning Period</ThemedText>
+            <View style={[styles.shelfLifeBox, { backgroundColor: bgInput }]}>
+              <WheelPicker
+                label=""
+                value={form.warningPeriodValue}
+                range={30} // max 30 days/hours/years, adjust as needed
+                onValueChange={(v) =>
+                  setForm({ ...form, warningPeriodValue: v })
+                }
+              />
+              <View style={styles.unitSelector}>
+                {(["days", "hours", "years"] as const).map((unit) => (
+                  <TouchableOpacity
+                    key={unit}
+                    onPress={() =>
+                      setForm({ ...form, warningPeriodUnit: unit })
+                    }
+                    style={[
+                      styles.unitBtn,
+                      form.warningPeriodUnit === unit && styles.activeUnit,
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.unitText,
+                        form.warningPeriodUnit === unit &&
+                          styles.activeUnitText,
                       ]}
                     >
                       {unit}

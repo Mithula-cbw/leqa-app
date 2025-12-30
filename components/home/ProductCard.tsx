@@ -7,7 +7,6 @@ import {
   Image,
   TouchableOpacity,
   Pressable,
-  Alert,
 } from "react-native";
 import { AlertDialog, ReductionModal, ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -19,6 +18,7 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import ProductSkeleton from "./ProductSkeleton";
 import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
+import { addTime } from "@/utils/addTime";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const { loading, controller, refreshProducts } = useStock();
@@ -51,15 +51,15 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const handleIncrease = async () => {
-    const expiry = new Date();
-    const value = item.shelf_life_value ?? 1;
-    const unit = item.shelf_life_unit ?? "days";
+    const shelfValue = item.shelf_life_value ?? 7;
+    const shelfUnit = item.shelf_life_unit ?? "days";
+    const expiryDate = addTime(new Date(), shelfValue, shelfUnit);
 
-    if (unit === "years") expiry.setFullYear(expiry.getFullYear() + value);
-    else if (unit === "hours") expiry.setHours(expiry.getHours() + value);
-    else expiry.setDate(expiry.getDate() + value);
+    const warnValue = item.warning_period_value ?? 1;
+    const warnUnit = item.warning_period_unit ?? "days";
+    const warnDate = addTime(expiryDate, -warnValue, warnUnit);
 
-    await controller.addStockBatch(item.id, 1, expiry);
+    await controller.addStockBatch(item.id, 1, expiryDate, warnDate);
     await refreshProducts();
   };
 

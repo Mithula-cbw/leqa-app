@@ -29,6 +29,8 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         price REAL DEFAULT 0.0,
         shelf_life_value INTEGER, 
         shelf_life_unit TEXT CHECK(shelf_life_unit IN ('days', 'hours', 'years')),
+        warning_period_value INTEGER,        
+        warning_period_unit TEXT CHECK(warning_period_unit IN ('days', 'hours', 'years')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         is_pinned INTEGER DEFAULT 0, -- 0 for false, 1 for true,
         sort_order INTEGER DEFAULT 0
@@ -41,6 +43,7 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         product_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL,
         expiry_at TEXT,
+        warn_at Text,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
