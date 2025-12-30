@@ -14,6 +14,7 @@ import {
   ThemedText,
   AlertDialog,
   ReductionModal,
+  EditableField,
 } from "@/components/shared";
 import { Product } from "@/types/stock";
 import { ProductOptionsModal } from "@/components/products";
@@ -21,6 +22,7 @@ import { ProductAction } from "@/components/products/ProductCard";
 import { useStock } from "@/contexts/StockContext";
 import { ReduceMode } from "@/components/home/ProductCard";
 import { push } from "expo-router/build/global-state/routing";
+import { formatText } from "@/utils/formatText";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -34,6 +36,15 @@ const ProductHero = ({ product }: Props) => {
   const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
   const [reduceModal, setReduceModal] = useState(false);
   const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
+
+  const handleUpdate = async (field: string, value: any) => {
+    try {
+      await controller.updateProductField(product.id, field, value);
+      await refreshProducts();
+    } catch (err) {
+      alert("Failed to update");
+    }
+  };
 
   const confirmDelete = async () => {
     setDeleteAlertVisible(false);
@@ -126,9 +137,14 @@ const ProductHero = ({ product }: Props) => {
 
       {/* Bottom overlay for text readability */}
       <ThemedView style={styles.overlayInfo}>
-        <ThemedText type="title" style={styles.productTitle}>
-          {product.title}
-        </ThemedText>
+        <EditableField
+          value={product.title}
+          iconStyle={styles.editIconTitle}
+          textStyle={styles.productTitle}
+          iconColor="#fff"
+          iconSize={19}
+          onSave={(val) => handleUpdate("title", val)}
+        />
         <ThemedText style={styles.productSubtitle}>{product.weight}</ThemedText>
       </ThemedView>
 
@@ -152,6 +168,12 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: 320,
     position: "relative",
+  },
+  editIconTitle: {
+    marginLeft: 2,
+    marginBottom: 3,
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    borderRadius: 4,
   },
   thumbnail: {
     width: "100%",
@@ -190,10 +212,12 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0, 0, 0, 0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+    fontSize: 18,
+    fontWeight: 600
   },
   productSubtitle: {
     color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 600,
     marginTop: 4,
   },

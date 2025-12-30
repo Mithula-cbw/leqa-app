@@ -128,6 +128,33 @@ export const stockController = (db: SQLiteDatabase) => {
       }));
     },
 
+    // update Batches for One Product
+    updateProductField: async (
+      productId: number,
+      field: string,
+      value: any
+    ) => {
+      const allowedFields = [
+        "title",
+        "description",
+        "weight",
+        "price",
+        "image",
+        "shelf_life_value",
+        "shelf_life_unit",
+        "warning_period_value",
+        "warning_period_unit",
+      ];
+      if (!allowedFields.includes(field)) {
+        throw new Error("Invalid field update");
+      }
+
+      return await db.runAsync(
+        `UPDATE products SET ${field} = ? WHERE id = ?`,
+        [value, productId]
+      );
+    },
+
     //Reduce Stock (FEFO)
     reduceStock: async (productId: number, amountToReduce: number) => {
       const batches = await db.getAllAsync<any>(
