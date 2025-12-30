@@ -1,18 +1,17 @@
 import React, { useMemo } from "react";
 import { StyleSheet, View, TouchableOpacity, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useStock } from "@/contexts/StockContext";
-import { InventorySection } from "@/features/products";
+import { InventorySection, ProductHero } from "@/features/products";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { products, batches } = useStock();
-  
+
   const iconColor = useThemeColor({}, "icon");
   const cardBg = useThemeColor({}, "sheet");
   const borderColor = useThemeColor({}, "background-muted");
@@ -35,42 +34,9 @@ export default function ProductDetail() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={iconColor} />
-        </TouchableOpacity>
-        <ThemedText type="subtitle">Product Details</ThemedText>
-      </View>
-
-      {/* PRODUCT SUMMARY SECTION */}
-      <View style={styles.productHero}>
-        <View style={[styles.imageContainer, { backgroundColor: cardBg, borderColor }]}>
-          {product.image ? (
-            <Image source={{ uri: product.image }} style={styles.image} />
-          ) : (
-            <MaterialCommunityIcons name="package-variant" size={48} color={iconColor} style={{ opacity: 0.2 }} />
-          )}
-        </View>
-
-        <View style={styles.detailsContainer}>
-          <ThemedText type="title" style={styles.title}>{product.title}</ThemedText>
-          
-          <View style={styles.metaRow}>
-            <View style={styles.badge}>
-              <ThemedText style={styles.badgeText}>{product.weight || "N/A"}</ThemedText>
-            </View>
-         </View>
-
-          <View style={styles.stockInfo}>
-            <ThemedText style={styles.stockLabel}>Current Inventory</ThemedText>
-            <ThemedText type="subtitle" style={{ color: totalStock > 0 ? "#19a139" : "#ff4444" }}>
-              {totalStock} Units
-            </ThemedText>
-          </View>
-        </View>
-      </View>
+      <ProductHero product={product} />
 
       <View style={styles.divider} />
 
@@ -81,7 +47,7 @@ export default function ProductDetail() {
         </View>
         <InventorySection productId={product.id} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -96,7 +62,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { padding: 4 },
-  
+
   // New Styles for Details
   productHero: {
     flexDirection: "row",
@@ -167,5 +133,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
-  }
+  },
 });

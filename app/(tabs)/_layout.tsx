@@ -21,7 +21,7 @@ export default function RootLayout() {
   }, [user, loading]);
 
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: activeTint,
