@@ -12,6 +12,7 @@ import { Product } from "@/types/stock";
 import { formatText } from "@/utils/formatText";
 import { useStock } from "@/contexts/StockContext";
 import ProductOptionsModal from "./ProductOptionsModal";
+import ProductCardSkeleton from "./ProductSkeleton";
 
 export type ProductAction = "view" | "edit" | "pin" | "empty" | "delete";
 
@@ -21,7 +22,7 @@ const ProductCard = ({ item }: { item: Product }) => {
     visible: boolean;
     type: "empty" | "delete";
   }>({ visible: false, type: "delete" });
-  const { controller, refreshProducts } = useStock();
+  const { loading, controller, refreshProducts } = useStock();
 
   const cardBg = useThemeColor({}, "sheet");
   const shadow = useThemeColor({}, "text");
@@ -49,6 +50,8 @@ const ProductCard = ({ item }: { item: Product }) => {
       setAlertConfig({ visible: true, type: action });
     }
   };
+
+  if (loading) return <ProductCardSkeleton />;
 
   return (
     <>

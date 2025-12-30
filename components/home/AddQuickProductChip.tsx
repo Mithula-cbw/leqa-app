@@ -54,7 +54,7 @@ const AddQuickProductChip = ({
               { color: "#28a745", fontWeight: "700" },
             ]}
           >
-            {product.total_stock}
+            {`${product.total_stock} Left `}
           </ThemedText>
         </View>
       </View>

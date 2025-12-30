@@ -9,7 +9,7 @@ import {
   Pressable,
   Alert,
 } from "react-native";
-import { ReductionModal, ThemedText } from "@/components/shared";
+import { AlertDialog, ReductionModal, ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { useStock } from "@/contexts/StockContext";
@@ -24,11 +24,24 @@ const ProductCard = ({ item }: { item: Product }) => {
   const { loading, controller, refreshProducts } = useStock();
 
   const [reduceModal, setReduceModal] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    visible: boolean;
+    type: "empty" | "delete";
+  }>({ visible: false, type: "delete" });
   const [optionsVisible, setOptionsVisible] = useState(false);
 
   const cardBg = useThemeColor({}, "sheet");
   const bgSecondary = useThemeColor({}, "background-seconary");
   const iconColor = useThemeColor({}, "icon");
+
+  const handleConfirmedAction = async () => {
+    if (alertConfig.type === "delete") {
+      await controller.deleteProduct(item.id);
+    } else {
+      await controller.reduceStock(item.id, item.total_stock);
+    }
+    await refreshProducts();
+  };
 
   const goToProduct = () => {
     router.push({ pathname: "/products", params: { id: item.id } });
@@ -62,35 +75,11 @@ const ProductCard = ({ item }: { item: Product }) => {
         break;
 
       case "empty":
-        Alert.alert(
-          "Empty Stock",
-          `Remove all ${item.total_stock} items from ${item.title}?`,
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Empty",
-              style: "destructive",
-              onPress: async () => {
-                await controller.reduceStock(item.id, item.total_stock);
-                await refreshProducts();
-              },
-            },
-          ]
-        );
+        setAlertConfig({ visible: true, type: "empty" });
         return;
 
       case "delete":
-        Alert.alert("Delete Product", "This action cannot be undone.", [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: async () => {
-              await controller.deleteProduct(item.id);
-              await refreshProducts();
-            },
-          },
-        ]);
+        setAlertConfig({ visible: true, type: "delete" });
         return;
     }
 
@@ -201,6 +190,19 @@ const ProductCard = ({ item }: { item: Product }) => {
           </View>
         </View>
       </Pressable>
+      <AlertDialog
+        isVisible={alertConfig.visible}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+        onConfirm={handleConfirmedAction}
+        title={alertConfig.type === "delete" ? "Delete Product" : "Empty Stock"}
+        description={
+          alertConfig.type === "delete"
+            ? `Are you sure you want to delete ${item.title}? This cannot be undone.`
+            : `This will remove all current stock batches for ${item.title}.`
+        }
+        confirmText={alertConfig.type === "delete" ? "Delete" : "Empty Now"}
+        isDestructive={alertConfig.type === "delete"}
+      />
     </>
   );
 };
@@ -254,7 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "flex-start",
     marginLeft: 2,
-    marginTop:2,
+    marginTop: 2,
   },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   subText: { fontSize: 16, opacity: 0.9, color: "#19a139ff" },
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 12,
     alignItems: "flex-end",
-    marginRight: 3
+    marginRight: 3,
   },
   rightInner: {
     flex: 1,
