@@ -19,6 +19,6 @@ export interface StockItem {
   product_id: number;
   batch_number: number;
   quantity: number;
-  expiry_date: string;
-  created_at: string;
+  expiry_at: Date | null;
+  created_at: Date;
 }

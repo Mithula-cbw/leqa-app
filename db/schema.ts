@@ -40,7 +40,7 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         batch_number INTEGER,
         product_id INTEGER NOT NULL,
         quantity INTEGER NOT NULL,
-        expiry_date DATE,
+        expiry_at TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );

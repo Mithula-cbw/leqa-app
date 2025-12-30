@@ -56,7 +56,7 @@ const ProductCard = ({ item }: { item: Product }) => {
     else if (unit === "hours") expiry.setHours(expiry.getHours() + value);
     else expiry.setDate(expiry.getDate() + value);
 
-    await controller.addStockBatch(item.id, 1, expiry.toISOString());
+    await controller.addStockBatch(item.id, 1, expiry);
     await refreshProducts();
   };
 

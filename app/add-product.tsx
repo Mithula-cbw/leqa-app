@@ -82,7 +82,7 @@ export default function AddProductScreen() {
         await controller.addStockBatch(
           result.lastInsertRowId,
           initialStock,
-          expiry.toISOString()
+          expiry
         );
       }
 

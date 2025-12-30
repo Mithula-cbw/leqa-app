@@ -3,9 +3,16 @@
 import { Product, StockItem } from "@/types/stock";
 import { SQLiteDatabase } from "expo-sqlite";
 
+//  Helpers
+const toDbDate = (date: Date | null): string | null =>
+  date ? date.toISOString() : null;
+
+const fromDbDate = (value: string | null): Date | null =>
+  value ? new Date(value) : null;
+
 export const stockController = (db: SQLiteDatabase) => {
   return {
-    // Create a New Product (The Blueprint)
+    //Create Product (Blueprint)
     createProduct: async (
       title: string,
       description: string,
@@ -17,12 +24,12 @@ export const stockController = (db: SQLiteDatabase) => {
     ) => {
       const existing = await db.getFirstAsync<{ id: number }>(
         `
-  SELECT id
-  FROM products
-  WHERE LOWER(TRIM(title)) = LOWER(TRIM(?))
-    AND LOWER(TRIM(weight)) = LOWER(TRIM(?))
-    AND price = ?
-  `,
+        SELECT id
+        FROM products
+        WHERE LOWER(TRIM(title)) = LOWER(TRIM(?))
+          AND LOWER(TRIM(weight)) = LOWER(TRIM(?))
+          AND price = ?
+        `,
         [title, weight, price]
       );
 
@@ -31,7 +38,11 @@ export const stockController = (db: SQLiteDatabase) => {
       }
 
       return await db.runAsync(
-        "INSERT INTO products (title, description, weight, price, image, shelf_life_value, shelf_life_unit ) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        `
+        INSERT INTO products
+          (title, description, weight, price, image, shelf_life_value, shelf_life_unit)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
         [
           title,
           description,
@@ -44,55 +55,85 @@ export const stockController = (db: SQLiteDatabase) => {
       );
     },
 
-    // Add a Stock Batch (Specific packets)
+
+     // Add Stock Batch (Date + Time)
     addStockBatch: async (
       productId: number,
       quantity: number,
-      expiryDate: string
+      expiryAt: Date
     ) => {
-      // Get the current highest batch number for this specific product
+      if (!(expiryAt instanceof Date)) {
+        throw new Error("expiryAt must be a Date");
+      }
+
       const result = await db.getFirstAsync<{ maxBatch: number }>(
-        "SELECT MAX(batch_number) as maxBatch FROM stock_items WHERE product_id = ?",
+        `
+        SELECT MAX(batch_number) as maxBatch
+        FROM stock_items
+        WHERE product_id = ?
+        `,
         [productId]
       );
 
       const nextBatchNumber = (result?.maxBatch || 0) + 1;
 
-      // Insert the new batch
       return await db.runAsync(
-        "INSERT INTO stock_items (product_id, batch_number, quantity, expiry_date) VALUES (?, ?, ?, ?)",
-        [productId, nextBatchNumber, quantity, expiryDate]
+        `
+        INSERT INTO stock_items
+          (product_id, batch_number, quantity, expiry_at)
+        VALUES (?, ?, ?, ?)
+        `,
+        [productId, nextBatchNumber, quantity, toDbDate(expiryAt)]
       );
     },
 
-    // Get All Products with their Total Stock (For Main List)
+    //Products + Total Stock
     getAllProducts: async (): Promise<Product[]> => {
       return await db.getAllAsync<Product>(`
-    SELECT 
-      p.*,
-      COALESCE(SUM(s.quantity), 0) AS total_stock
-      FROM products p
-      LEFT JOIN stock_items s ON p.id = s.product_id
-      GROUP BY p.id
-      ORDER BY 
-      p.is_pinned DESC,
-      total_stock DESC,
-      p.title ASC
-  `);
+        SELECT
+          p.*,
+          COALESCE(SUM(s.quantity), 0) AS total_stock
+        FROM products p
+        LEFT JOIN stock_items s ON p.id = s.product_id
+        GROUP BY p.id
+        ORDER BY
+          p.is_pinned DESC,
+          total_stock DESC,
+          p.title ASC
+      `);
     },
 
-    // Get specific batches for a product (For Detail View)
+    //Batches for One Product
     getProductBatches: async (productId: number): Promise<StockItem[]> => {
-      return await db.getAllAsync<StockItem>(
-        "SELECT * FROM stock_items WHERE product_id = ? ORDER BY expiry_date ASC",
+      const rows = await db.getAllAsync<any>(
+        `
+        SELECT *
+        FROM stock_items
+        WHERE product_id = ?
+        ORDER BY expiry_at ASC
+        `,
         [productId]
       );
+
+      return rows.map((row) => ({
+        id: row.id,
+        product_id: row.product_id,
+        batch_number: row.batch_number,
+        quantity: row.quantity,
+        expiry_at: fromDbDate(row.expiry_at),
+        created_at: new Date(row.created_at),
+      }));
     },
 
-    // Reduce Stock (FEFO Logic: First Expired, First Out)
+    //Reduce Stock (FEFO)
     reduceStock: async (productId: number, amountToReduce: number) => {
-      const batches = await db.getAllAsync<StockItem>(
-        "SELECT id, quantity FROM stock_items WHERE product_id = ? ORDER BY expiry_date ASC",
+      const batches = await db.getAllAsync<any>(
+        `
+        SELECT id, quantity
+        FROM stock_items
+        WHERE product_id = ?
+        ORDER BY expiry_at ASC
+        `,
         [productId]
       );
 
@@ -106,25 +147,35 @@ export const stockController = (db: SQLiteDatabase) => {
           await db.runAsync("DELETE FROM stock_items WHERE id = ?", [batch.id]);
         } else {
           await db.runAsync(
-            "UPDATE stock_items SET quantity = quantity - ? WHERE id = ?",
+            `
+            UPDATE stock_items
+            SET quantity = quantity - ?
+            WHERE id = ?
+            `,
             [remaining, batch.id]
           );
           remaining = 0;
         }
       }
+
       return remaining === 0;
     },
 
-    // Delete Product (Will also delete all batches due to ON DELETE CASCADE)
+    //Delete Product
     deleteProduct: async (productId: number) => {
       return await db.runAsync("DELETE FROM products WHERE id = ?", [
         productId,
       ]);
     },
 
+    //Pin / Unpin
     togglePin: async (productId: number, isPinned: boolean) => {
       return await db.runAsync(
-        "UPDATE products SET is_pinned = ? WHERE id = ?",
+        `
+        UPDATE products
+        SET is_pinned = ?
+        WHERE id = ?
+        `,
         [isPinned ? 1 : 0, productId]
       );
     },

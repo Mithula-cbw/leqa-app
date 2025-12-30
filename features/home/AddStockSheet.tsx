@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 interface StagedProduct {
   product: Product;
   quantity: number;
-  expiryDate: string;
+  expiryDate: Date;
 }
 
 const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
@@ -24,7 +24,6 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const [search, setSearch] = useState("");
   const [stagedItems, setStagedItems] = useState<StagedProduct[]>([]);
 
-  // Theme Colors
   const bgSecondary = useThemeColor({}, "background-seconary");
   const inputBg = useThemeColor({}, "background-seconary");
   const textColor = useThemeColor({}, "text");
@@ -41,7 +40,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
   const displayData = useMemo(() => {
     const pinned = products.filter((p) => p.is_pinned === 1);
-    return pinned.length > 0 ? pinned : products.slice(0, 2); //dev
+    return pinned.length > 0 ? pinned : products.slice(0, 2);
   }, [products]);
 
   const addProductToStaging = (product: Product) => {
@@ -64,7 +63,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
       {
         product,
         quantity: 1,
-        expiryDate: expiry.toISOString(),
+        expiryDate: expiry,
       },
     ]);
     setSearch("");
@@ -88,7 +87,6 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* ADDED PRODUCTS */}
         <View style={styles.section}>
           <ThemedText
             type="defaultSemiBold"
@@ -134,7 +132,7 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
             ))
           )}
         </View>
-        {/* PINNED/QUICK ADD */}
+
         <View style={styles.section}>
           <ThemedText
             type="defaultSemiBold"
@@ -157,7 +155,6 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
           </ScrollView>
         </View>
 
-        {/* SEARCHABLE LIST */}
         <View style={styles.section}>
           <ThemedText
             type="defaultSemiBold"
@@ -197,7 +194,6 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
         </View>
       </ScrollView>
 
-      {/* ACTION BUTTON */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
@@ -222,19 +218,10 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 export default AddStockSheet;
 
 const styles = StyleSheet.create({
-  sheetContainer: {
-    paddingHorizontal: 0,
-    paddingTop: 5,
-  },
-  header: {
-    marginBottom: 20,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  section: {
-    marginBottom: 25,
-  },
+  sheetContainer: { paddingHorizontal: 0, paddingTop: 5 },
+  header: { marginBottom: 20 },
+  scrollContent: { paddingBottom: 100 },
+  section: { marginBottom: 25 },
   sectionLabel: {
     fontSize: 14,
     textTransform: "uppercase",
@@ -250,28 +237,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
   },
-  emptyText: {
-    opacity: 0.4,
-    fontSize: 14,
-  },
-  pinnedScroll: {
-    flexDirection: "row",
-  },
+  emptyText: { opacity: 0.4, fontSize: 14 },
+  pinnedScroll: { flexDirection: "row" },
   quickCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: 8,
     borderRadius: 16,
-    width: 220, // Fixed width for horizontal scrolling consistency
+    width: 220,
     gap: 10,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.03)",
   },
-  quickThumb: {
-    width: 45,
-    height: 45,
-    borderRadius: 10,
-  },
+  quickThumb: { width: 45, height: 45, borderRadius: 10 },
   quickPlaceholder: {
     width: 45,
     height: 45,
@@ -279,14 +257,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  quickInfo: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  quickSubText: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
+  quickInfo: { flex: 1, justifyContent: "center" },
+  quickSubText: { fontSize: 12, opacity: 0.6 },
   quickAddIcon: {
     width: 28,
     height: 28,
@@ -302,11 +274,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 10,
   },
-  input: {
-    flex: 1,
-    paddingVertical: 15,
-    fontSize: 16,
-  },
+  input: { flex: 1, paddingVertical: 15, fontSize: 16 },
   searchResult: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -315,10 +283,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
-  subText: {
-    fontSize: 13,
-    opacity: 0.5,
-  },
+  subText: { fontSize: 13, opacity: 0.5 },
   footer: {
     position: "absolute",
     bottom: 0,
@@ -336,9 +301,5 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  buttonText: {
-    fontWeight: "700",
-    fontSize: 16,
-    color: "#fff",
-  },
+  buttonText: { fontWeight: "700", fontSize: 16, color: "#fff" },
 });
