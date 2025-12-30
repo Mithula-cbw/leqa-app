@@ -27,30 +27,24 @@ const ProductCard = ({ item }: { item: Product }) => {
 
   const [reduceModal, setReduceModal] = useState(false);
   const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    type: "empty" | "delete";
-  }>({ visible: false, type: "delete" });
+  const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
   const [optionsVisible, setOptionsVisible] = useState(false);
 
   const cardBg = useThemeColor({}, "sheet");
   const bgSecondary = useThemeColor({}, "background-seconary");
   const iconColor = useThemeColor({}, "icon");
 
-  const handleConfirmedAction = async () => {
-    if (alertConfig.type === "delete") {
-      await controller.deleteProduct(item.id);
-    } else {
-      await controller.reduceStock(item.id, item.total_stock);
-    }
-    await refreshProducts();
-  };
-
   const goToProduct = () => {
     router.push({
       pathname: "/products/[id]",
       params: { id: item.id.toString() },
     });
+  };
+
+  const confirmDelete = async () => {
+    await controller.deleteProduct(item.id);
+    await refreshProducts();
+    setDeleteAlertVisible(false);
   };
 
   const handleIncrease = async () => {
@@ -86,7 +80,7 @@ const ProductCard = ({ item }: { item: Product }) => {
         return;
 
       case "delete":
-        setAlertConfig({ visible: true, type: "delete" });
+        setDeleteAlertVisible(true);
         return;
     }
 
@@ -207,17 +201,13 @@ const ProductCard = ({ item }: { item: Product }) => {
         </View>
       </Pressable>
       <AlertDialog
-        isVisible={alertConfig.visible}
-        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
-        onConfirm={handleConfirmedAction}
-        title={alertConfig.type === "delete" ? "Delete Product" : "Empty Stock"}
-        description={
-          alertConfig.type === "delete"
-            ? `Are you sure you want to delete ${item.title}? This cannot be undone.`
-            : `This will remove all current stock batches for ${item.title}.`
-        }
-        confirmText={alertConfig.type === "delete" ? "Delete" : "Empty Now"}
-        isDestructive={alertConfig.type === "delete"}
+        isVisible={deleteAlertVisible}
+        onClose={() => setDeleteAlertVisible(false)}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        description={`Are you sure you want to delete ${item.title}? This cannot be undone.`}
+        confirmText="Delete"
+        isDestructive
       />
     </>
   );

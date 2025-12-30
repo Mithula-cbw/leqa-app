@@ -10,7 +10,7 @@ const NoProductsFound: React.FC = () => {
   const onAddProduct = () => {
     router.push("/add-product");
   };
-  
+
   return (
     <View style={[styles.container, { backgroundColor: sheetBg }]}>
       <ThemedText type="subtitle" style={styles.title}>
@@ -42,7 +42,9 @@ export default NoProductsFound;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    paddingVertical: 32,
+    marginTop: 2,
+    paddingTop: 120,
+    paddingBottom: 180,
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",

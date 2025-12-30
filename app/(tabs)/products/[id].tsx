@@ -1,29 +1,16 @@
-import React, { useMemo } from "react";
-import { StyleSheet, View, TouchableOpacity, Image } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
 import { ThemedText } from "@/components/shared";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { useStock } from "@/contexts/StockContext";
 import { InventorySection, ProductHero } from "@/features/products";
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { products, batches } = useStock();
-
-  const iconColor = useThemeColor({}, "icon");
-  const cardBg = useThemeColor({}, "sheet");
-  const borderColor = useThemeColor({}, "background-muted");
+  const { products } = useStock();
 
   const product = products.find((p) => p.id === Number(id));
-
-  // Calculate total stock for this specific product
-  const totalStock = useMemo(() => {
-    return batches
-      .filter((b) => b.product_id === Number(id))
-      .reduce((sum, b) => sum + b.quantity, 0);
-  }, [batches, id]);
 
   if (!product) {
     return (

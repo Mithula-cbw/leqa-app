@@ -6,61 +6,97 @@ import { View, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-import { AlertDialog, ThemedText } from "@/components/shared";
+import { AlertDialog, ReductionModal, ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Product } from "@/types/stock";
 import { formatText } from "@/utils/formatText";
 import { useStock } from "@/contexts/StockContext";
 import ProductOptionsModal from "./ProductOptionsModal";
 import ProductCardSkeleton from "./ProductSkeleton";
+import { ReduceMode } from "../home/ProductCard";
 
 export type ProductAction = "view" | "edit" | "pin" | "empty" | "delete";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    type: "empty" | "delete";
-  }>({ visible: false, type: "delete" });
+  const [reduceModal, setReduceModal] = useState(false);
+  const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
+  const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
+
   const { loading, controller, refreshProducts } = useStock();
 
   const cardBg = useThemeColor({}, "sheet");
   const shadow = useThemeColor({}, "text");
   const bgSecondary = useThemeColor({}, "background-seconary");
 
-  // to handle confirmation of delete and empty stock dialogs
-  const handleConfirmedAction = async () => {
-    if (alertConfig.type === "delete") {
-      await controller.deleteProduct(item.id);
-    } else {
-      await controller.reduceStock(item.id, item.total_stock);
-    }
+  const confirmDelete = async () => {
+    await controller.deleteProduct(item.id);
     await refreshProducts();
+    setDeleteAlertVisible(false);
   };
 
-  const handleActionRequest = (action: ProductAction) => {
-    if (action === "view")
-      router.push({
-        pathname: "/products/[id]",
-        params: { id: item.id.toString() },
-      });
-    if (action === "edit")
-      router.push({ pathname: "/products", params: { id: item.id } });
-    if (action === "pin")
-      controller.togglePin(item.id, item.is_pinned === 0).then(refreshProducts);
+  const goToProduct = () => {
+    router.push({
+      pathname: "/products/[id]",
+      params: { id: item.id.toString() },
+    });
+  };
 
-    if (action === "empty" || action === "delete") {
-      setAlertConfig({ visible: true, type: action });
+  const onReduceConfirm = async () => {
+    if (item.total_stock <= 0) return;
+
+    if (reduceMode === "all") {
+      await controller.reduceStock(item.id, item.total_stock);
+    } else {
+      await controller.reduceStock(item.id, 1);
     }
+
+    await refreshProducts();
+    setReduceModal(false);
+  };
+
+  const handleAction = async (action: ProductAction) => {
+    switch (action) {
+      case "view":
+        goToProduct();
+        break;
+
+      case "edit":
+        goToProduct();
+        break;
+
+      case "pin":
+        await controller.togglePin(item.id, item.is_pinned === 0);
+        break;
+
+      case "empty":
+        setReduceMode("all");
+        setReduceModal(true);
+        return;
+
+      case "delete":
+        setDeleteAlertVisible(true);
+        return;
+    }
+
+    await refreshProducts();
   };
 
   if (loading) return <ProductCardSkeleton />;
 
   return (
     <>
+      {/* Reduce modal */}
+      <ReductionModal
+        reduceMode={reduceMode}
+        isVisible={reduceModal}
+        product={item}
+        onClose={() => setReduceModal(false)}
+        onConfirm={onReduceConfirm}
+      />
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() => handleActionRequest("view")}
+        onPress={() => handleAction("view")}
         style={[styles.card, { shadowColor: shadow, backgroundColor: cardBg }]}
       >
         <View style={styles.imageContainer}>
@@ -138,21 +174,17 @@ const ProductCard = ({ item }: { item: Product }) => {
         onClose={() => setMenuVisible(false)}
         product={item}
         isPinned={item.is_pinned === 1}
-        onAction={handleActionRequest}
+        onAction={handleAction}
       />
 
       <AlertDialog
-        isVisible={alertConfig.visible}
-        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
-        onConfirm={handleConfirmedAction}
-        title={alertConfig.type === "delete" ? "Delete Product" : "Empty Stock"}
-        description={
-          alertConfig.type === "delete"
-            ? `Are you sure you want to delete ${item.title}? This cannot be undone.`
-            : `This will remove all current stock batches for ${item.title}.`
-        }
-        confirmText={alertConfig.type === "delete" ? "Delete" : "Empty Now"}
-        isDestructive={alertConfig.type === "delete"}
+        isVisible={deleteAlertVisible}
+        onClose={() => setDeleteAlertVisible(false)}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        description={`Are you sure you want to delete ${item.title}? This cannot be undone.`}
+        confirmText="Delete"
+        isDestructive
       />
     </>
   );

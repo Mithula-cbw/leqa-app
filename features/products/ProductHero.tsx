@@ -9,36 +9,52 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { BlurView } from "expo-blur";
-import { ThemedView, ThemedText } from "@/components/shared";
+import {
+  ThemedView,
+  ThemedText,
+  AlertDialog,
+  ReductionModal,
+} from "@/components/shared";
 import { Product } from "@/types/stock";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { ProductOptionsModal } from "@/components/products";
 import { ProductAction } from "@/components/products/ProductCard";
 import { useStock } from "@/contexts/StockContext";
+import { ReduceMode } from "@/components/home/ProductCard";
+import { push } from "expo-router/build/global-state/routing";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface Props {
   product: Product;
-  onMorePress?: () => void;
 }
 
-const ProductHero = ({ product, onMorePress }: Props) => {
-  const iconColor = useThemeColor({}, "text");
+const ProductHero = ({ product }: Props) => {
   const { controller, refreshProducts } = useStock();
-
   const [optionsVisible, setOptionsVisible] = useState(false);
+  const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
+  const [reduceModal, setReduceModal] = useState(false);
+  const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
 
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    type: "empty" | "delete";
-  }>({ visible: false, type: "delete" });
+  const confirmDelete = async () => {
+    setDeleteAlertVisible(false);
 
-  const goToProduct = () => {
-    router.push({
-      pathname: "/products/[id]",
-      params: { id: product.id.toString() },
-    });
+    await controller.deleteProduct(product.id);
+    await refreshProducts();
+
+    router.replace("/products");
+  };
+
+  const onReduceConfirm = async () => {
+    if (product.total_stock <= 0) return;
+
+    if (reduceMode === "all") {
+      await controller.reduceStock(product.id, product.total_stock);
+    } else {
+      await controller.reduceStock(product.id, 1);
+    }
+
+    await refreshProducts();
+    setReduceModal(false);
   };
 
   const handleAction = async (action: ProductAction) => {
@@ -48,11 +64,12 @@ const ProductHero = ({ product, onMorePress }: Props) => {
         break;
 
       case "empty":
-        setAlertConfig({ visible: true, type: "empty" });
+        setReduceMode("all");
+        setReduceModal(true);
         return;
 
       case "delete":
-        setAlertConfig({ visible: true, type: "delete" });
+        setDeleteAlertVisible(true);
         return;
     }
 
@@ -75,10 +92,17 @@ const ProductHero = ({ product, onMorePress }: Props) => {
         isProductPage={true}
       />
 
-      {/* 1. Main Thumbnail Image */}
+      <ReductionModal
+        reduceMode={reduceMode}
+        isVisible={reduceModal}
+        product={product}
+        onClose={() => setReduceModal(false)}
+        onConfirm={onReduceConfirm}
+      />
+
       <Image source={imageSource} style={styles.thumbnail} resizeMode="cover" />
 
-      {/* 2. Fixed Floating Back Icon */}
+      {/* Fixed Floating Back Icon */}
       <TouchableOpacity
         style={[styles.floatingBtn, styles.leftBtn]}
         onPress={() => router.back()}
@@ -89,7 +113,7 @@ const ProductHero = ({ product, onMorePress }: Props) => {
         </BlurView>
       </TouchableOpacity>
 
-      {/* 3. Fixed Floating More Option Icon */}
+      {/* Fixed Floating More Option Icon */}
       <TouchableOpacity
         style={[styles.floatingBtn, styles.rightBtn]}
         onPress={() => setOptionsVisible(true)}
@@ -100,13 +124,23 @@ const ProductHero = ({ product, onMorePress }: Props) => {
         </BlurView>
       </TouchableOpacity>
 
-      {/* Optional: Bottom overlay for text readability */}
+      {/* Bottom overlay for text readability */}
       <ThemedView style={styles.overlayInfo}>
         <ThemedText type="title" style={styles.productTitle}>
           {product.title}
         </ThemedText>
         <ThemedText style={styles.productSubtitle}>{product.weight}</ThemedText>
       </ThemedView>
+
+      <AlertDialog
+        isVisible={deleteAlertVisible}
+        onClose={() => setDeleteAlertVisible(false)}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        description={`Are you sure you want to delete ${product.title}? This cannot be undone.`}
+        confirmText="Delete"
+        isDestructive
+      />
     </ThemedView>
   );
 };
