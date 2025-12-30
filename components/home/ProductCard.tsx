@@ -20,10 +20,13 @@ import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
 import { addTime } from "@/utils/addTime";
 
+export type ReduceMode = "one" | "all";
+
 const ProductCard = ({ item }: { item: Product }) => {
   const { loading, controller, refreshProducts } = useStock();
 
   const [reduceModal, setReduceModal] = useState(false);
+  const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
     type: "empty" | "delete";
@@ -70,7 +73,7 @@ const ProductCard = ({ item }: { item: Product }) => {
         break;
 
       case "edit":
-        router.push({ pathname: "/products", params: { id: item.id } });
+        goToProduct();
         break;
 
       case "pin":
@@ -78,7 +81,8 @@ const ProductCard = ({ item }: { item: Product }) => {
         break;
 
       case "empty":
-        setAlertConfig({ visible: true, type: "empty" });
+        setReduceMode("all");
+        setReduceModal(true);
         return;
 
       case "delete":
@@ -90,10 +94,15 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const onReduceConfirm = async () => {
-    if (item.total_stock > 0) {
+    if (item.total_stock <= 0) return;
+
+    if (reduceMode === "all") {
+      await controller.reduceStock(item.id, item.total_stock);
+    } else {
       await controller.reduceStock(item.id, 1);
-      await refreshProducts();
     }
+
+    await refreshProducts();
     setReduceModal(false);
   };
 
@@ -103,6 +112,7 @@ const ProductCard = ({ item }: { item: Product }) => {
     <>
       {/* Reduce modal */}
       <ReductionModal
+        reduceMode={reduceMode}
         isVisible={reduceModal}
         product={item}
         onClose={() => setReduceModal(false)}
@@ -169,7 +179,10 @@ const ProductCard = ({ item }: { item: Product }) => {
           {/* CONTROLS */}
           <View style={[styles.controls, { backgroundColor: bgSecondary }]}>
             <TouchableOpacity
-              onPress={() => setReduceModal(true)}
+              onPress={() => {
+                setReduceMode("one");
+                setReduceModal(true);
+              }}
               disabled={item.total_stock <= 0}
               style={[
                 styles.btn,

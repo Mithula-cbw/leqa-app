@@ -13,6 +13,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { formatText } from "@/utils/formatText";
 import { Product } from "@/types/stock";
+import { ReduceMode } from "../home/ProductCard";
 
 type ReductionType = "sell" | "waste" | "delete";
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -22,6 +23,7 @@ interface ReductionOptionsModalProps {
   onClose: () => void;
   product: Product;
   onConfirm: (type: ReductionType) => void;
+  reduceMode: ReduceMode;
 }
 
 const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
@@ -29,9 +31,12 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
   onClose,
   product,
   onConfirm,
+  reduceMode,
 }) => {
   const divider = useThemeColor({}, "background-seconary");
   const iconMuted = useThemeColor({}, "icon");
+
+  const isAll = reduceMode === "all";
 
   const Option = ({
     icon,
@@ -39,7 +44,7 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
     type,
     color,
     isLast,
-     disabled = false,
+    disabled = false,
   }: {
     icon: IoniconName;
     label: string;
@@ -94,9 +99,7 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
               >
                 {formatText(product.title)}
               </ThemedText>
-              <ThemedText style={styles.subtitle}>
-                Reduce stock
-              </ThemedText>
+              <ThemedText style={styles.subtitle}>Reduce stock</ThemedText>
             </View>
 
             <TouchableOpacity onPress={onClose} hitSlop={10}>
@@ -104,28 +107,42 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
             </TouchableOpacity>
           </View>
 
+          {isAll && (
+            <View style={styles.warningBox}>
+              <Ionicons
+                name="warning-outline"
+                size={40}
+                color="#f1cd29de"
+                style={{ marginRight: 8 }}
+              />
+              <ThemedText style={styles.warningText}>
+                This will remove all stock for this product.
+              </ThemedText>
+            </View>
+          )}
+
           {/* Options */}
           <Option
             icon="cash-outline"
-            label="Sold item"
+            label={isAll ? `Sold items [${product.total_stock}]` : "Sold item"}
             type="sell"
-            color="#269141ff" // Consistent Emerald Green
+            color="#269141ff"
             disabled={product.total_stock <= 0}
           />
-          
+
           <Option
             icon="trash-bin-outline"
-            label="Waste / expired"
+            label={isAll ? `Waste / expired [${product.total_stock}]` : "Waste / expired"}
             type="waste"
-            color="#bf7e23ff" // Consistent Warning Amber
+            color="#bf7e23ff"
             disabled={product.total_stock <= 0}
           />
-          
+
           <Option
             icon="remove-circle-outline"
-            label="Silent remove (no log)"
+            label={isAll ? `Silent remove (no log) [${product.total_stock}]` : "Silent remove (no log)"}
             type="delete"
-            color={iconMuted} // Uses your theme's muted icon color (Slate/Gray)
+            color={iconMuted}
             isLast
             disabled={product.total_stock <= 0}
           />
@@ -152,6 +169,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     elevation: 20,
+  },
+
+  warningBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderLeftWidth: 4,
+    borderLeftColor: "#f1cd29de",
+    backgroundColor: "rgba(168, 156, 25, 0.14)",
+    padding: 10,
+    marginBottom: 10,
+  },
+
+  warningText: {
+    fontSize: 12,
+    color: "#998e8dff",
+    flex: 1,
+    lineHeight:16
   },
 
   header: {

@@ -23,6 +23,7 @@ interface ProductOptionsModalProps {
   product: Product;
   isPinned: boolean;
   onAction: (action: ProductAction) => void;
+  isProductPage?: boolean;
 }
 
 const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
@@ -31,6 +32,7 @@ const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
   product,
   isPinned,
   onAction,
+  isProductPage = false,
 }) => {
   const divider = useThemeColor({}, "background-seconary");
   const iconMuted = useThemeColor({}, "icon");
@@ -111,8 +113,13 @@ const ProductOptionsModal: React.FC<ProductOptionsModalProps> = ({
           </View>
 
           {/* Options */}
-          <Option icon="eye-outline" label="View details" type="view" />
-          <Option icon="create-outline" label="Edit product" type="edit" />
+          {!isProductPage && (
+            <Option icon="eye-outline" label="View details" type="view" />
+          )}
+          {!isProductPage && (
+            <Option icon="create-outline" label="Edit product" type="edit" />
+          )}
+
           <Option
             icon={isPinned ? "pin-outline" : "pin"}
             label={isPinned ? "Unpin" : "Pin to top"}
