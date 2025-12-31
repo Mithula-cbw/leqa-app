@@ -8,8 +8,6 @@ import {
   TextInput,
 } from "react-native";
 
-// Types
-
 export interface TimePickerValue {
   year: number;
   month: number;
@@ -18,11 +16,12 @@ export interface TimePickerValue {
 }
 
 interface TimePickerProps {
-  initialValue?: TimePickerValue; // Initial date/time state
-  startYear?: number; // The beginning of the year range
-  endYear?: number; // The end of the year range
-  onValueChange: (value: TimePickerValue) => void; // Callback triggered on change
-  accentColor?: string; // Brand color for arrows and borders
+  initialValue?: TimePickerValue;
+  startYear?: number;
+  endYear?: number;
+  onValueChange: (value: TimePickerValue) => void;
+  accentColor?: string;
+  hideYear?: boolean;
 }
 
 interface WheelProps {
@@ -31,11 +30,9 @@ interface WheelProps {
   label: string;
   onSelect: (value: number) => void;
   accentColor: string;
-  min?: number; // Minimum allowed value
-  max?: number; // Maximum allowed value
+  min?: number;
+  max?: number;
 }
-
-// Sub-Component: Editable Wheel
 
 const EditableWheel: React.FC<WheelProps> = ({
   data,
@@ -46,30 +43,27 @@ const EditableWheel: React.FC<WheelProps> = ({
   min = 0,
   max = 99,
 }) => {
-  // Local state for the text input to allow fluid typing before committing
   const [inputValue, setInputValue] = useState(
-    selectedValue.toString().padStart(2, "0")
+    selectedValue.toString().padStart(label === "Year" ? 4 : 2, "0")
   );
 
-  // Sync internal state if selectedValue changes from external (arrows)
   React.useEffect(() => {
-    setInputValue(selectedValue.toString().padStart(2, "0"));
-  }, [selectedValue]);
+    setInputValue(
+      selectedValue.toString().padStart(label === "Year" ? 4 : 2, "0")
+    );
+  }, [selectedValue, label]);
 
   const handleTextChange = (text: string) => {
-    // Only allow numbers
     const cleanText = text.replace(/[^0-9]/g, "");
     setInputValue(cleanText);
   };
 
   const handleEndEditing = () => {
     let num = parseInt(inputValue, 10);
-
-    // Validation logic
     if (isNaN(num) || num < min) num = min;
     if (num > max) num = max;
 
-    setInputValue(num.toString().padStart(2, "0"));
+    setInputValue(num.toString().padStart(label === "Year" ? 4 : 2, "0"));
     onSelect(num);
   };
 
@@ -77,6 +71,8 @@ const EditableWheel: React.FC<WheelProps> = ({
     const currentIndex = data.indexOf(selectedValue);
     if (currentIndex < data.length - 1) {
       onSelect(data[currentIndex + 1]);
+    } else if (currentIndex === -1 && selectedValue < max) {
+      onSelect(selectedValue + 1);
     }
   };
 
@@ -84,6 +80,8 @@ const EditableWheel: React.FC<WheelProps> = ({
     const currentIndex = data.indexOf(selectedValue);
     if (currentIndex > 0) {
       onSelect(data[currentIndex - 1]);
+    } else if (currentIndex === -1 && selectedValue > min) {
+      onSelect(selectedValue - 1);
     }
   };
 
@@ -123,14 +121,13 @@ const EditableWheel: React.FC<WheelProps> = ({
   );
 };
 
-// Main Component
-
 const TimeRangePicker: React.FC<TimePickerProps> = ({
   initialValue,
   startYear = 2020,
   endYear = 2030,
   onValueChange,
   accentColor = "#57400fff",
+  hideYear = false, // Default to showing the year
 }) => {
   const [values, setValues] = useState<TimePickerValue>(
     initialValue || {
@@ -146,20 +143,18 @@ const TimeRangePicker: React.FC<TimePickerProps> = ({
       Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i),
     [startYear, endYear]
   );
-  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
+  const months = useMemo(() => Array.from({ length: 13 }, (_, i) => i), []);
   const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
 
   const daysInMonthArray = useMemo(() => {
     const date = new Date(values.year, values.month, 0);
     const count = date.getDate();
-    // Change: Start from 0 instead of 1
     return Array.from({ length: count + 1 }, (_, i) => i);
   }, [values.year, values.month]);
 
   const updateValue = (key: keyof TimePickerValue, val: number) => {
     const newState = { ...values, [key]: val };
 
-    // Logic to handle month/year changes affecting day count
     if (key === "month" || key === "year") {
       const lastDay = new Date(newState.year, newState.month, 0).getDate();
       if (newState.day > lastDay) newState.day = lastDay;
@@ -171,15 +166,17 @@ const TimeRangePicker: React.FC<TimePickerProps> = ({
 
   return (
     <View style={styles.container}>
-      <EditableWheel
-        label="Year"
-        data={years}
-        selectedValue={values.year}
-        onSelect={(v) => updateValue("year", v)}
-        accentColor={accentColor}
-        min={startYear}
-        max={endYear}
-      />
+      {!hideYear && (
+        <EditableWheel
+          label="Year"
+          data={years}
+          selectedValue={values.year}
+          onSelect={(v) => updateValue("year", v)}
+          accentColor={accentColor}
+          min={startYear}
+          max={endYear}
+        />
+      )}
       <EditableWheel
         label="Month"
         data={months}
@@ -196,7 +193,7 @@ const TimeRangePicker: React.FC<TimePickerProps> = ({
         onSelect={(v) => updateValue("day", v)}
         accentColor={accentColor}
         min={0}
-        max={daysInMonthArray.length}
+        max={31}
       />
       <View style={styles.separator}>
         <Text style={styles.separatorText}>:</Text>
@@ -214,16 +211,17 @@ const TimeRangePicker: React.FC<TimePickerProps> = ({
   );
 };
 
+export default TimeRangePicker;
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
-    paddingBottom: 20,
+    paddingVertical: 20,
     paddingHorizontal: 10,
     borderRadius: 16,
-
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -271,5 +269,3 @@ const styles = StyleSheet.create({
     color: "#c7c7cc",
   },
 });
-
-export default TimeRangePicker;

@@ -23,3 +23,20 @@ export function formatText(text: string, type: TextCase = "title"): string {
         .join(" ");
   }
 }
+
+export const formatDuration = (parts: {
+  years?: number | null;
+  months?: number | null;
+  days?: number | null;
+  hours?: number | null;
+}) => {
+  const out: string[] = [];
+
+  if (parts.years) out.push(`${parts.years}y`);
+  if (parts.months) out.push(`${parts.months}mo`);
+  if (parts.days) out.push(`${parts.days}d`);
+  if (parts.hours) out.push(`${parts.hours}h`);
+
+  return out.length ? out.join(" ") : "Not set";
+};
+

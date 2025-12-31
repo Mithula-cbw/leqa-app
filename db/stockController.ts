@@ -32,7 +32,7 @@ export const stockController = (db: SQLiteDatabase) => {
       warningPeriodDays = 0,
       warningPeriodHours = 0
     ) => {
-      console.log(doExpire, doWarn)
+      console.log(doExpire, doWarn);
       const existing = await db.getFirstAsync<{ id: number }>(
         `
         SELECT id
@@ -183,10 +183,12 @@ export const stockController = (db: SQLiteDatabase) => {
         "weight_unit",
         "price",
         "image",
+        "do_expire",
         "shelf_life_years",
         "shelf_life_months",
         "shelf_life_days",
         "shelf_life_hours",
+        "do_warn",
         "warning_period_months",
         "warning_period_days",
         "warning_period_hours",
@@ -200,6 +202,23 @@ export const stockController = (db: SQLiteDatabase) => {
       return await db.runAsync(
         `UPDATE products SET ${field} = ? WHERE id = ?`,
         [value, productId]
+      );
+    },
+
+    // Update Product Fields
+    updateProductFields: async (
+      productId: number,
+      updates: Record<string, any>
+    ) => {
+      const fields = Object.keys(updates);
+      const values = Object.values(updates);
+
+      // Build the SET part of the query: "field1 = ?, field2 = ?"
+      const setClause = fields.map((f) => `${f} = ?`).join(", ");
+
+      return await db.runAsync(
+        `UPDATE products SET ${setClause} WHERE id = ?`,
+        [...values, productId]
       );
     },
 
