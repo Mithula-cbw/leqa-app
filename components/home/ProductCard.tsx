@@ -18,7 +18,7 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import ProductSkeleton from "./ProductSkeleton";
 import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
-import { addTime } from "@/utils/addDuration";
+import { addDuration } from "@/utils/addDuration";
 
 export type ReduceMode = "one" | "all";
 
@@ -48,16 +48,50 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const handleIncrease = async () => {
-    const shelfValue = item.shelf_life_value ?? 7;
-    const shelfUnit = item.shelf_life_unit ?? "days";
-    const expiryDate = addTime(new Date(), shelfValue, shelfUnit);
+    console.log("do shelf_life_days", item.shelf_life_years) // dev-log
+    console.log("do warn", item.do_warn) // dev-log
 
-    const warnValue = item.warning_period_value ?? 1;
-    const warnUnit = item.warning_period_unit ?? "days";
-    const warnDate = addTime(expiryDate, -warnValue, warnUnit);
+    // Check if expiration logic is active for this specific product
+    const isExpireActive = item.do_expire === 1;
+    const isWarnActive = item.do_warn === 1;
 
-    await controller.addStockBatch(item.id, 1, expiryDate, warnDate);
-    await refreshProducts();
+    let expiry: Date | null = null;
+    let warnDate: Date | null = null;
+
+    if (isExpireActive) {
+      // Extract durations (using fallbacks for safety)
+      const shelfY = item.shelf_life_years ?? 0;
+      const shelfM = item.shelf_life_months ?? 0;
+      const shelfD = item.shelf_life_days ?? 7;
+      const shelfH = item.shelf_life_hours ?? 0;
+
+      // Calculate Expiry Date
+      expiry = new Date();
+      expiry.setFullYear(expiry.getFullYear() + shelfY);
+      expiry.setMonth(expiry.getMonth() + shelfM);
+      expiry.setDate(expiry.getDate() + shelfD);
+      expiry.setHours(expiry.getHours() + shelfH);
+
+      // Calculate Warning Date if enabled
+      if (isWarnActive) {
+        const warnM = item.warning_period_months ?? 0;
+        const warnD = item.warning_period_days ?? 1;
+        const warnH = item.warning_period_hours ?? 0;
+
+        warnDate = new Date(expiry);
+        warnDate.setMonth(warnDate.getMonth() - warnM);
+        warnDate.setDate(warnDate.getDate() - warnD);
+        warnDate.setHours(warnDate.getHours() - warnH);
+      }
+    }
+
+    // Save the new batch (adding exactly 1 to stock)
+    try {
+      await controller.addStockBatch(item.id, 1, expiry, warnDate);
+      await refreshProducts();
+    } catch (error) {
+      console.error("Failed to increase stock:", error);
+    }
   };
 
   const handleAction = async (action: ProductAction) => {

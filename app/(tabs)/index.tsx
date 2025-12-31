@@ -50,7 +50,6 @@ export default function Index() {
         onClose={() => setSheetVisible(false)}
         animationDuration={400}
       >
-        {/* <View style={styles.test}></View> */}
         <AddStockSheet onFinish={() => setSheetVisible(false)} />
       </BottomSheet>
     </ThemedView>
@@ -62,15 +61,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flex: 1,
+    flexGrow: 1,
+    
   },
   content: {
-    flex: 1,
     marginTop: 25,
+    paddingBottom: 393,
     borderTopRightRadius: 36,
     borderTopLeftRadius: 36,
     paddingVertical: 10,
-    paddingHorizontal: 15,    
-    paddingBottom: 120,
+    paddingHorizontal: 15,
   },
 });

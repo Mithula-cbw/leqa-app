@@ -32,6 +32,7 @@ export const stockController = (db: SQLiteDatabase) => {
       warningPeriodDays = 0,
       warningPeriodHours = 0
     ) => {
+      console.log(doExpire, doWarn)
       const existing = await db.getFirstAsync<{ id: number }>(
         `
         SELECT id

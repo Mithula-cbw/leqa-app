@@ -35,7 +35,7 @@ const ProductsContent = () => {
 const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 0, 
-    paddingBottom: 120,
+    paddingBottom: 320,
     flexGrow: 1, 
   },
   row: {
