@@ -6,18 +6,18 @@ import {
   Platform,
   Dimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { BlurView } from "expo-blur";
+import * as ImagePicker from "expo-image-picker";
 import {
   ThemedView,
-  ThemedText,
   AlertDialog,
   ReductionModal,
   EditableField,
 } from "@/components/shared";
 import { Product } from "@/types/stock";
-import { ProductOptionsModal } from "@/components/products";
+import { EditableWeight, ProductOptionsModal } from "@/components/products";
 import { ProductAction } from "@/components/products/ProductCard";
 import { useStock } from "@/contexts/StockContext";
 import { ReduceMode } from "@/components/home/ProductCard";
@@ -87,6 +87,26 @@ const ProductHero = ({ product }: Props) => {
     await refreshProducts();
   };
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      alert("Sorry, we need camera roll permissions to make this work!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      handleUpdate("image", result.assets[0].uri);
+    }
+  };
+
   // Replace with your actual logic for product image fallback
   const imageSource = product.image
     ? { uri: product.image }
@@ -124,6 +144,17 @@ const ProductHero = ({ product }: Props) => {
         </BlurView>
       </TouchableOpacity>
 
+      {/* Edit Image Button */}
+      <TouchableOpacity
+        style={[styles.floatingBtn, styles.imageBtn]}
+        onPress={pickImage}
+        activeOpacity={0.7}
+      >
+        <BlurView intensity={60} style={styles.blurWrapper} tint="dark">
+          <MaterialCommunityIcons name="image-edit" size={24} color="#ffffffe7" />
+        </BlurView>
+      </TouchableOpacity>
+
       {/* Fixed Floating More Option Icon */}
       <TouchableOpacity
         style={[styles.floatingBtn, styles.rightBtn]}
@@ -145,9 +176,14 @@ const ProductHero = ({ product }: Props) => {
           iconSize={19}
           onSave={(val) => handleUpdate("title", val)}
         />
-        <ThemedText style={styles.productSubtitle}>{`${product.weight_value} ${
-            product.weight_unit ?? "g"
-          }`}</ThemedText>
+        <EditableWeight
+          value={product.weight_value}
+          unit={product.weight_unit}
+          onSave={(newVal, newUnit) => {
+            handleUpdate("weight_value", newVal);
+            handleUpdate("weight_unit", newUnit);
+          }}
+        />
       </ThemedView>
 
       <AlertDialog
@@ -183,7 +219,6 @@ const styles = StyleSheet.create({
   },
   floatingBtn: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 70 : 50,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -194,11 +229,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 22,
   },
   leftBtn: {
+    top: Platform.OS === "ios" ? 70 : 50,
     left: 20,
   },
+  imageBtn: {
+    right: 70,
+    top: Platform.OS === "ios" ? 70 : 50,
+  },
   rightBtn: {
+    top: Platform.OS === "ios" ? 70 : 50,
     right: 20,
   },
   overlayInfo: {
@@ -215,7 +257,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
     fontSize: 18,
-    fontWeight: 600
+    fontWeight: 600,
   },
   productSubtitle: {
     color: "rgba(255, 255, 255, 0.8)",

@@ -50,7 +50,6 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 4 },
 
-  // New Styles for Details
   productHero: {
     flexDirection: "row",
     padding: 16,
@@ -74,10 +73,6 @@ const styles = StyleSheet.create({
   detailsContainer: {
     flex: 1,
     justifyContent: "center",
-  },
-  title: {
-    fontSize: 22,
-    marginBottom: 4,
   },
   metaRow: {
     flexDirection: "row",
