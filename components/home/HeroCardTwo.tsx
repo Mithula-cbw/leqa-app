@@ -19,7 +19,7 @@ const HeroCardOne = ({ leftAmount }: HeroCardProps) => {
         <View style={styles.overlay}>
           {/* Content */}
           <View style={styles.Content}>
-            <ThemedText style={styles.title}>Packets Left</ThemedText>
+            <ThemedText style={styles.title}>Units Left</ThemedText>
             <ThemedText style={styles.amountText}>{leftAmount}</ThemedText>
           </View>
         </View>

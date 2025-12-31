@@ -204,7 +204,9 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
             >
               <View>
                 <ThemedText type="defaultSemiBold">{product.title}</ThemedText>
-                <ThemedText style={styles.subText}>{product.weight}</ThemedText>
+                <ThemedText style={styles.subText}>{`${product.weight_value} ${
+                  product.weight_unit ?? "g"
+                }`}</ThemedText>
               </View>
               <Ionicons name="add-circle" size={24} color={primaryBtn} />
             </TouchableOpacity>

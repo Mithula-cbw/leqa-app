@@ -84,7 +84,9 @@ const AddedProductItem = ({
           <ThemedText type="defaultSemiBold" numberOfLines={1}>
             {product.title}
           </ThemedText>
-          <ThemedText style={styles.subText}>{product.weight}</ThemedText>
+          <ThemedText style={styles.subText}>{`${product.weight_value} ${
+            product.weight_unit ?? "g"
+          }`}</ThemedText>
         </View>
 
         <View style={styles.qtyContainer}>

@@ -4,7 +4,8 @@ export interface Product {
   id: number;
   title: string;
   description: string;
-  weight: string;
+  weight_value: number;
+  weight_unit: 'g' | 'kg';
   price: number;
   image?: string | null;
   total_stock: number;

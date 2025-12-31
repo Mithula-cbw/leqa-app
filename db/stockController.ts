@@ -16,7 +16,8 @@ export const stockController = (db: SQLiteDatabase) => {
     createProduct: async (
       title: string,
       description: string,
-      weight: string,
+      weight_value: number,
+      weight_unit: "g" | "kg" | null,
       price: number,
       image?: string | null,
       shelfLifeValue?: number,
@@ -29,10 +30,11 @@ export const stockController = (db: SQLiteDatabase) => {
         SELECT id
         FROM products
         WHERE LOWER(TRIM(title)) = LOWER(TRIM(?))
-          AND LOWER(TRIM(weight)) = LOWER(TRIM(?))
+          AND LOWER(TRIM(weight_unit)) = LOWER(TRIM(?))
+          AND weight_value = ?
           AND price = ?
         `,
-        [title, weight, price]
+        [title, weight_unit, weight_value, price]
       );
 
       if (existing) {
@@ -42,13 +44,14 @@ export const stockController = (db: SQLiteDatabase) => {
       return await db.runAsync(
         `
         INSERT INTO products
-          (title, description, weight, price, image, shelf_life_value, shelf_life_unit)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (title, description, weight_value, weight_unit, price, image, shelf_life_value, shelf_life_unit)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
           title,
           description,
-          weight,
+          weight_value ?? 0,
+          weight_unit ?? 'g',
           price,
           image ?? null,
           shelfLifeValue ?? 7,
@@ -137,7 +140,8 @@ export const stockController = (db: SQLiteDatabase) => {
       const allowedFields = [
         "title",
         "description",
-        "weight",
+        "weight_value",
+        "weight_unit",
         "price",
         "image",
         "shelf_life_value",

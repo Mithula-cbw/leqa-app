@@ -29,7 +29,7 @@ const HeroCardOne = () => {
         <View style={styles.overlay}>
           <View style={styles.Content}>
             <View style={styles.ContentInner}>
-              <ThemedText style={styles.title}>Packets Left</ThemedText>
+              <ThemedText style={styles.title}>Units Left</ThemedText>
               <ThemedText style={styles.subtitle}>
                 belong to {activeProductsCount}{" "}
                 {activeProductsCount === 1 ? "product" : "products"}

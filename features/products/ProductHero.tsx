@@ -145,7 +145,9 @@ const ProductHero = ({ product }: Props) => {
           iconSize={19}
           onSave={(val) => handleUpdate("title", val)}
         />
-        <ThemedText style={styles.productSubtitle}>{product.weight}</ThemedText>
+        <ThemedText style={styles.productSubtitle}>{`${product.weight_value} ${
+            product.weight_unit ?? "g"
+          }`}</ThemedText>
       </ThemedView>
 
       <AlertDialog

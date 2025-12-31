@@ -1,5 +1,4 @@
 // Leqa © 2025 Mithula Chanthuka
-
 import React, { useState } from "react";
 import {
   StyleSheet,
@@ -11,24 +10,27 @@ import {
   View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+
 import { ThemedView, ThemedText } from "@/components/shared";
 import { useStock } from "@/contexts/StockContext";
-import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { WheelPicker } from "@/components/ui/WheelPicker";
 
 export default function AddProductScreen() {
   const { controller, refreshProducts } = useStock();
-  const bgInput = useThemeColor({}, "background-seconary");
+  const bgSecondary = useThemeColor({}, "background-seconary");
+  const tint = "#9e7913ff";
 
   const [form, setForm] = useState({
     title: "",
-    weight: "",
+    weight_value: 0,
+    weight_unit: "g" as "g" | "kg",
     price: "",
     shelfLifeValue: 7,
-    shelfLifeUnit: "days" as "days" | "hours" | "years",
+    shelfLifeUnit: "days" as "days" | "hours",
     warningPeriodValue: 1,
-    warningPeriodUnit: "days" as "days" | "hours" | "years",
+    warningPeriodUnit: "days" as "days" | "hours",
     initialStock: 0,
     image: null as string | null,
   });
@@ -46,196 +48,127 @@ export default function AddProductScreen() {
   };
 
   const handleSave = async () => {
-    const {
-      title,
-      weight,
-      price,
-      shelfLifeValue,
-      shelfLifeUnit,
-      warningPeriodValue,
-      warningPeriodUnit,
-      initialStock,
-      image,
-    } = form;
-
-    if (!title || !weight || !price) {
-      Alert.alert("Required Fields", "Please fill in Name, Weight, and Price.");
+    if (!form.title || !form.weight_value || !form.price) {
+      Alert.alert("Required Fields", "Name, Weight and Price are required.");
       return;
     }
 
     try {
       const result = await controller.createProduct(
-        title,
+        form.title,
         "",
-        weight,
-        parseFloat(price),
-        image,
-        shelfLifeValue,
-        shelfLifeUnit,
-        warningPeriodValue,
-        warningPeriodUnit
+        form.weight_value,
+        form.weight_unit,
+        parseFloat(form.price),
+        form.image,
+        form.shelfLifeValue,
+        form.shelfLifeUnit,
+        form.warningPeriodValue,
+        form.warningPeriodUnit
       );
 
-      if (initialStock > 0) {
-        const expiryDate = new Date();
-        if (shelfLifeUnit === "hours") {
-          expiryDate.setHours(expiryDate.getHours() + shelfLifeValue);
-        } else if (shelfLifeUnit === "years") {
-          expiryDate.setFullYear(expiryDate.getFullYear() + shelfLifeValue);
+      if (form.initialStock > 0) {
+        const expiry = new Date();
+        if (form.shelfLifeUnit === "days") {
+          expiry.setDate(expiry.getDate() + form.shelfLifeValue);
         } else {
-          expiryDate.setDate(expiryDate.getDate() + shelfLifeValue);
+          expiry.setHours(expiry.getHours() + form.shelfLifeValue);
         }
 
-        const warnDate = new Date(expiryDate);
-        if (warningPeriodUnit === "hours") {
-          warnDate.setHours(warnDate.getHours() - warningPeriodValue);
-        } else if (warningPeriodUnit === "years") {
-          warnDate.setFullYear(warnDate.getFullYear() - warningPeriodValue);
-        } else {
-          warnDate.setDate(warnDate.getDate() - warningPeriodValue);
-        }
+        const warn = new Date(expiry);
+        warn.setDate(warn.getDate() - form.warningPeriodValue);
 
         await controller.addStockBatch(
           result.lastInsertRowId,
-          initialStock,
-          expiryDate,
-          warnDate
+          form.initialStock,
+          expiry,
+          warn
         );
       }
 
       await refreshProducts();
       router.back();
-    } catch (err: any) {
-      Alert.alert("Error", err.message);
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
     }
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <ThemedView style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* IMAGE PICKER */}
         <TouchableOpacity
-          style={[styles.imagePicker, { backgroundColor: bgInput }]}
+          style={[styles.imagePicker, { backgroundColor: bgSecondary }]}
           onPress={pickImage}
         >
           {form.image ? (
             <Image source={{ uri: form.image }} style={styles.previewImage} />
           ) : (
-            <View style={styles.imagePlaceholder}>
-              <ThemedText style={{ fontSize: 40 }}>📸</ThemedText>
-              <ThemedText style={styles.subText}>Add Product Photo</ThemedText>
+            <View style={{ alignItems: "center" }}>
+              <Ionicons name="camera-outline" size={32} color={tint} />
+              <ThemedText style={styles.labelHint}>
+                Add Product Image
+              </ThemedText>
             </View>
           )}
         </TouchableOpacity>
 
-        <ThemedText style={[styles.label, { marginBottom: -8 }]}>
-          Product Name *
-        </ThemedText>
-        <TextInput
-          style={[styles.input, { backgroundColor: bgInput }]}
-          placeholder="e.g. Oyster Mushrooms"
-          value={form.title}
-          onChangeText={(t) => setForm({ ...form, title: t })}
-        />
+        {/* PRODUCT NAME */}
+        <View style={styles.inputGroup}>
+          <ThemedText style={styles.label}>Product Name</ThemedText>
+          <TextInput
+            style={[styles.input, { backgroundColor: bgSecondary }]}
+            placeholder="e.g. Oyster Mushrooms"
+            value={form.title}
+            onChangeText={(t) => setForm({ ...form, title: t })}
+          />
+        </View>
 
+        {/* PRICE + WEIGHT ROW */}
         <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <ThemedText style={styles.label}>Weight *</ThemedText>
+          <View style={[styles.inputGroup, { flex: 1 }]}>
+            <ThemedText style={styles.label}>Price ($)</ThemedText>
             <TextInput
-              style={[styles.input, { backgroundColor: bgInput }]}
-              placeholder="250g"
-              value={form.weight}
-              onChangeText={(t) => setForm({ ...form, weight: t })}
-            />
-          </View>
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <ThemedText style={styles.label}>Price ($) *</ThemedText>
-            <TextInput
-              style={[styles.input, { backgroundColor: bgInput }]}
-              placeholder="5.00"
-              keyboardType="numeric"
+              style={[styles.input, { backgroundColor: bgSecondary }]}
+              placeholder="0.00"
+              keyboardType="decimal-pad"
               value={form.price}
               onChangeText={(t) => setForm({ ...form, price: t })}
             />
           </View>
-        </View>
 
-        <View style={styles.row}>
-          {/* Reusable Roller for Stock */}
-          <WheelPicker
-            label="Initial Stock"
-            value={form.initialStock}
-            range={100}
-            onValueChange={(val) => setForm({ ...form, initialStock: val })}
-          />
-
-          {/* Roller + Unit Switcher for Shelf Life */}
-          <View style={{ flex: 1.2, marginLeft: 10 }}>
-            <ThemedText style={styles.label}>Shelf Life</ThemedText>
-            <View style={[styles.shelfLifeBox, { backgroundColor: bgInput }]}>
-              <WheelPicker
-                label=""
-                value={form.shelfLifeValue}
-                range={99}
-                onValueChange={(v) => setForm({ ...form, shelfLifeValue: v })}
-              />
-              <View style={styles.unitSelector}>
-                {(["days", "hours"] as const).map((unit) => (
-                  <TouchableOpacity
-                    key={unit}
-                    onPress={() => setForm({ ...form, shelfLifeUnit: unit })}
-                    style={[
-                      styles.unitBtn,
-                      form.shelfLifeUnit === unit && styles.activeUnit,
-                    ]}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.unitText,
-                        form.shelfLifeUnit === unit && styles.activeUnitText,
-                      ]}
-                    >
-                      {unit}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          {/* Warning Period Picker */}
-          <View style={{ flex: 1.2 }}>
-            <ThemedText style={styles.label}>Warning Period</ThemedText>
-            <View style={[styles.shelfLifeBox, { backgroundColor: bgInput }]}>
-              <WheelPicker
-                label=""
-                value={form.warningPeriodValue}
-                range={30} // max 30 days/hours/years, adjust as needed
-                onValueChange={(v) =>
-                  setForm({ ...form, warningPeriodValue: v })
+          <View style={[styles.inputGroup, { flex: 1.2 }]}>
+            <ThemedText style={styles.label}>Weight</ThemedText>
+            <View style={[styles.inputRow, { backgroundColor: bgSecondary }]}>
+              <TextInput
+                style={styles.flexInput}
+                keyboardType="numeric"
+                placeholder="0"
+                value={form.weight_value === 0 ? "" : String(form.weight_value)}
+                onChangeText={(t) =>
+                  setForm({ ...form, weight_value: parseFloat(t) || 0 })
                 }
               />
-              <View style={styles.unitSelector}>
-                {(["days", "hours", "years"] as const).map((unit) => (
+              <View style={styles.unitToggleContainer}>
+                {(["g", "kg"] as const).map((u) => (
                   <TouchableOpacity
-                    key={unit}
-                    onPress={() =>
-                      setForm({ ...form, warningPeriodUnit: unit })
-                    }
+                    key={u}
+                    onPress={() => setForm({ ...form, weight_unit: u })}
                     style={[
-                      styles.unitBtn,
-                      form.warningPeriodUnit === unit && styles.activeUnit,
+                      styles.unitSmallBtn,
+                      form.weight_unit === u && { backgroundColor: tint },
                     ]}
                   >
                     <ThemedText
                       style={[
-                        styles.unitText,
-                        form.warningPeriodUnit === unit &&
-                          styles.activeUnitText,
+                        styles.unitSmallText,
+                        form.weight_unit === u && { color: "#fff" },
                       ]}
                     >
-                      {unit}
+                      {u}
                     </ThemedText>
                   </TouchableOpacity>
                 ))}
@@ -244,8 +177,61 @@ export default function AddProductScreen() {
           </View>
         </View>
 
+        {/* STOCK + SHELF LIFE ROW */}
+        <View style={styles.row}>
+          <View style={[styles.inputGroup, { flex: 1 }]}>
+            <ThemedText style={styles.label}>Stock Qty</ThemedText>
+            <TextInput
+              style={[styles.input, { backgroundColor: bgSecondary }]}
+              placeholder="0"
+              keyboardType="number-pad"
+              value={form.initialStock === 0 ? "" : String(form.initialStock)}
+              onChangeText={(v) =>
+                setForm({ ...form, initialStock: parseInt(v) || 0 })
+              }
+            />
+          </View>
+
+          <View style={[styles.inputGroup, { flex: 1.2 }]}>
+            <ThemedText style={styles.label}>Shelf Life</ThemedText>
+            <View style={[styles.inputRow, { backgroundColor: bgSecondary }]}>
+              <TextInput
+                style={styles.flexInput}
+                keyboardType="numeric"
+                placeholder="7"
+                value={String(form.shelfLifeValue)}
+                onChangeText={(v) =>
+                  setForm({ ...form, shelfLifeValue: parseInt(v) || 0 })
+                }
+              />
+              <View style={styles.unitToggleContainer}>
+                {(["days", "hours"] as const).map((u) => (
+                  <TouchableOpacity
+                    key={u}
+                    onPress={() => setForm({ ...form, shelfLifeUnit: u })}
+                    style={[
+                      styles.unitSmallBtn,
+                      form.shelfLifeUnit === u && { backgroundColor: tint },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.unitSmallText,
+                        form.shelfLifeUnit === u && { color: "#fff" },
+                      ]}
+                    >
+                      {u === "days" ? "D" : "H"}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* SAVE BUTTON */}
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <ThemedText style={styles.saveText}>Save Product</ThemedText>
+          <ThemedText style={styles.saveText}>Complete Product</ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </ThemedView>
@@ -253,49 +239,68 @@ export default function AddProductScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 20, gap: 15 },
-  label: { fontSize: 13, opacity: 0.6, marginBottom: 5, fontWeight: "600" },
-  input: { padding: 15, borderRadius: 12, fontSize: 16 },
-  row: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
+  scroll: { padding: 16, gap: 20 },
+  label: {
+    fontSize: 13,
+    fontWeight: "700",
+    opacity: 0.6,
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+  labelHint: { fontSize: 12, opacity: 0.4, marginTop: 4 },
+  inputGroup: { flex: 0 },
+
   imagePicker: {
-    width: "100%",
-    height: 160,
+    height: 120,
     borderRadius: 20,
-    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
-    borderStyle: "dashed",
-    borderWidth: 2,
-    borderColor: "#ccc",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
-  previewImage: { width: "100%", height: "100%" },
-  imagePlaceholder: { alignItems: "center" },
-  subText: { fontSize: 12, opacity: 0.5, marginTop: 5 },
-  shelfLifeBox: {
+  previewImage: { width: "100%", height: "100%", borderRadius: 20 },
+
+  input: {
+    padding: 14,
+    borderRadius: 14,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 16,
-    height: 120,
-    paddingRight: 10,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 54,
   },
-  unitSelector: { gap: 8 },
-  unitBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
+  flexInput: { flex: 1, fontSize: 16, fontWeight: "500", height: "100%" },
+
+  row: { flexDirection: "row", gap: 12 },
+
+  unitToggleContainer: {
+    flexDirection: "row",
     backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: 10,
+    padding: 3,
   },
-  activeUnit: { backgroundColor: "#007AFF" },
-  unitText: { fontSize: 12, textTransform: "capitalize" },
-  activeUnitText: { color: "#FFF", fontWeight: "bold" },
+  unitSmallBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  unitSmallText: { fontSize: 11, fontWeight: "bold", color: "#666" },
+
   saveBtn: {
-    backgroundColor: "#007AFF",
-    padding: 18,
-    borderRadius: 15,
+    backgroundColor: "#9e7913ff",
+    padding: 16,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  saveText: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
+  saveText: { color: "#fff", fontWeight: "800", fontSize: 16 },
 });

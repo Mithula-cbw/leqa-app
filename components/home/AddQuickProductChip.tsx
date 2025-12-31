@@ -46,7 +46,9 @@ const AddQuickProductChip = ({
         </ThemedText>
 
         <View style={styles.detailsRow}>
-          <ThemedText style={styles.quickSubText}>{product.weight}</ThemedText>
+          <ThemedText style={styles.quickSubText}>{`${product.weight_value} ${
+            product.weight_unit ?? "g"
+          }`}</ThemedText>
           <ThemedText style={styles.quickSubText}> • </ThemedText>
           <ThemedText
             style={[

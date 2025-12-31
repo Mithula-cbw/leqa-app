@@ -153,7 +153,9 @@ const ProductCard = ({ item }: { item: Product }) => {
               </View>
             )}
           </View>
-          <ThemedText style={styles.subText}>{item.weight}</ThemedText>
+          <ThemedText style={styles.subText}>{`${item.weight_value} ${
+            item.weight_unit ?? "g"
+          }`}</ThemedText>
           <View style={styles.stockRow}>
             <ThemedText
               type="defaultSemiBold"

@@ -5,11 +5,12 @@ import { ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 interface WheelPickerProps {
-  label: string;
+  label?: string;
   value: number;
   onValueChange: (value: number) => void;
   range: number;
   suffix?: string;
+  width?: number;
 }
 
 export const WheelPicker = ({
@@ -18,20 +19,21 @@ export const WheelPicker = ({
   onValueChange,
   range,
   suffix,
+  width = 72,
 }: WheelPickerProps) => {
-  const bg = useThemeColor({}, "background-seconary");
-  const textColor = useThemeColor({}, "text-muted");
+  const bg = useThemeColor({}, "sheet");
+  const text = useThemeColor({}, "text");
 
   return (
-    <View style={styles.container}>
-      <ThemedText style={styles.label}>{label}</ThemedText>
-      <View style={[styles.pickerWrapper, { backgroundColor: bg }]}>
+    <View style={[styles.container, { width }]}>
+      {label && <ThemedText style={styles.label}>{label}</ThemedText>}
+
+      <View style={[styles.wrapper, { backgroundColor: bg }]}>
         <Picker
           selectedValue={value}
           onValueChange={onValueChange}
           style={styles.picker}
-          itemStyle={[styles.itemStyle, { color: textColor }]}
-          mode={Platform.OS === "android" ? "dropdown" : "dialog"}
+          itemStyle={[styles.item, { color: text }]}
         >
           {Array.from({ length: range + 1 }, (_, i) => (
             <Picker.Item
@@ -48,30 +50,34 @@ export const WheelPicker = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    marginVertical: 10,
+    alignItems: "center",
   },
   label: {
-    fontSize: 13,
+    fontSize: 11,
     opacity: 0.6,
-    marginBottom: 8,
+    marginBottom: 2,
     fontWeight: "600",
-    marginLeft: 4,
   },
-  pickerWrapper: {
-    borderRadius: 16,
-    overflow: "hidden",
-    height: Platform.OS === "ios" ? 160 : 48,
+  wrapper: {
+    height: 40,
+    borderRadius: 12,
     justifyContent: "center",
-    paddingHorizontal: 12,
+    overflow: "hidden",
   },
-
   picker: {
     width: "100%",
-    height: Platform.OS === "ios" ? 160 : 48,
+    ...Platform.select({
+      ios: {
+        height: 110,
+        marginTop: -34, // 🔑 visual wheel without layout growth
+      },
+      android: {
+        height: 40,
+      },
+    }),
   },
-  itemStyle: {
-    fontSize: 18,
-    height: 160,
+  item: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
