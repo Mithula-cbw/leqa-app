@@ -3,7 +3,7 @@
 import { Product, StockItem } from "@/types/stock";
 import { SQLiteDatabase } from "expo-sqlite";
 
-//  Helpers
+// Helpers
 const toDbDate = (date: Date | null): string | null =>
   date ? date.toISOString() : null;
 
@@ -12,7 +12,9 @@ const fromDbDate = (value: string | null): Date | null =>
 
 export const stockController = (db: SQLiteDatabase) => {
   return {
-    //Create Product (Blueprint)
+    // =========================
+    // Create Product (Blueprint)
+    // =========================
     createProduct: async (
       title: string,
       description: string,
@@ -20,21 +22,26 @@ export const stockController = (db: SQLiteDatabase) => {
       weight_unit: "g" | "kg" | null,
       price: number,
       image?: string | null,
-      shelfLifeValue?: number,
-      shelfLifeUnit?: "days" | "hours" | "years" | null,
-      warningPeriodValue?: number,
-      warningPeriodUnit?: "days" | "hours" | "years" | null
+      doExpire = 0,
+      shelfLifeYears = 0,
+      shelfLifeMonths = 0,
+      shelfLifeDays = 0,
+      shelfLifeHours = 0,
+      doWarn = 0,
+      warningPeriodMonths = 0,
+      warningPeriodDays = 0,
+      warningPeriodHours = 0
     ) => {
       const existing = await db.getFirstAsync<{ id: number }>(
         `
         SELECT id
         FROM products
         WHERE LOWER(TRIM(title)) = LOWER(TRIM(?))
-          AND LOWER(TRIM(weight_unit)) = LOWER(TRIM(?))
           AND weight_value = ?
+          AND weight_unit = ?
           AND price = ?
         `,
-        [title, weight_unit, weight_value, price]
+        [title, weight_value, weight_unit, price]
       );
 
       if (existing) {
@@ -43,58 +50,84 @@ export const stockController = (db: SQLiteDatabase) => {
 
       return await db.runAsync(
         `
-        INSERT INTO products
-          (title, description, weight_value, weight_unit, price, image, shelf_life_value, shelf_life_unit)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO products (
+          title,
+          description,
+          weight_value,
+          weight_unit,
+          image,
+          price,
+          do_expire,
+          shelf_life_years,
+          shelf_life_months,
+          shelf_life_days,
+          shelf_life_hours,
+          do_warn,
+          warning_period_months,
+          warning_period_days,
+          warning_period_hours
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
           title,
           description,
           weight_value ?? 0,
-          weight_unit ?? 'g',
-          price,
+          weight_unit ?? "g",
           image ?? null,
-          shelfLifeValue ?? 7,
-          shelfLifeUnit ?? "days",
-          warningPeriodValue ?? 1,
-          warningPeriodUnit ?? "days",
+          price,
+          doExpire,
+          shelfLifeYears,
+          shelfLifeMonths,
+          shelfLifeDays,
+          shelfLifeHours,
+          doWarn,
+          warningPeriodMonths,
+          warningPeriodDays,
+          warningPeriodHours,
         ]
       );
     },
 
-    // Add Stock Batch (Date + Time)
+    // Add Stock Batch
     addStockBatch: async (
       productId: number,
       quantity: number,
-      expiryAt: Date,
-      warnAt: Date,
+      expiryAt: Date | null,
+      warnAt: Date | null,
       customBatchNumber?: number
     ) => {
-      if (!(expiryAt instanceof Date)) {
-        throw new Error("expiryAt must be a Date");
-      }
+      let batchNumber = customBatchNumber;
 
-      let batchToUse: number;
-
-      if (customBatchNumber) {
-        batchToUse = customBatchNumber;
-      } else {
+      if (!batchNumber) {
         const result = await db.getFirstAsync<{ maxBatch: number }>(
           `SELECT MAX(batch_number) as maxBatch FROM stock_items WHERE product_id = ?`,
           [productId]
         );
-        batchToUse = (result?.maxBatch || 0) + 1;
+        batchNumber = (result?.maxBatch || 0) + 1;
       }
 
       return await db.runAsync(
-        `INSERT INTO stock_items (product_id, batch_number, quantity, expiry_at, warn_at) VALUES (?, ?, ?, ?, ?)`,
-        [productId, batchToUse, quantity, toDbDate(expiryAt), toDbDate(warnAt)]
+        `
+        INSERT INTO stock_items (
+          product_id,
+          batch_number,
+          quantity,
+          expiry_at,
+          warn_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [productId, batchNumber, quantity, toDbDate(expiryAt), toDbDate(warnAt)]
       );
     },
 
-    //Products + Total Stock
+    // =========================
+    // Products + Total Stock
+    // =========================
     getAllProducts: async (): Promise<Product[]> => {
-      return await db.getAllAsync<Product>(`
+      return await db.getAllAsync<Product>(
+        `
         SELECT
           p.*,
           COALESCE(SUM(s.quantity), 0) AS total_stock
@@ -105,17 +138,20 @@ export const stockController = (db: SQLiteDatabase) => {
           p.is_pinned DESC,
           total_stock DESC,
           p.title ASC
-      `);
+        `
+      );
     },
 
-    //Batches for One Product
+    // =========================
+    // Batches for One Product
+    // =========================
     getProductBatches: async (productId: number): Promise<StockItem[]> => {
       const rows = await db.getAllAsync<any>(
         `
         SELECT *
         FROM stock_items
         WHERE product_id = ?
-        ORDER BY warn_at DESC
+        ORDER BY expiry_at ASC
         `,
         [productId]
       );
@@ -131,7 +167,9 @@ export const stockController = (db: SQLiteDatabase) => {
       }));
     },
 
-    // update Batches for One Product
+    // =========================
+    // Update Product Field
+    // =========================
     updateProductField: async (
       productId: number,
       field: string,
@@ -144,11 +182,16 @@ export const stockController = (db: SQLiteDatabase) => {
         "weight_unit",
         "price",
         "image",
-        "shelf_life_value",
-        "shelf_life_unit",
-        "warning_period_value",
-        "warning_period_unit",
+        "shelf_life_years",
+        "shelf_life_months",
+        "shelf_life_days",
+        "shelf_life_hours",
+        "warning_period_months",
+        "warning_period_days",
+        "warning_period_hours",
+        "sort_order",
       ];
+
       if (!allowedFields.includes(field)) {
         throw new Error("Invalid field update");
       }
@@ -159,7 +202,9 @@ export const stockController = (db: SQLiteDatabase) => {
       );
     },
 
-    //Reduce Stock (FEFO)
+    // =========================
+    // Reduce Stock (FEFO)
+    // =========================
     reduceStock: async (productId: number, amountToReduce: number) => {
       const batches = await db.getAllAsync<any>(
         `
@@ -178,7 +223,7 @@ export const stockController = (db: SQLiteDatabase) => {
 
         if (batch.quantity <= remaining) {
           remaining -= batch.quantity;
-          await db.runAsync("DELETE FROM stock_items WHERE id = ?", [batch.id]);
+          await db.runAsync(`DELETE FROM stock_items WHERE id = ?`, [batch.id]);
         } else {
           await db.runAsync(
             `
@@ -195,14 +240,18 @@ export const stockController = (db: SQLiteDatabase) => {
       return remaining === 0;
     },
 
-    //Delete Product
+    // =========================
+    // Delete Product
+    // =========================
     deleteProduct: async (productId: number) => {
-      return await db.runAsync("DELETE FROM products WHERE id = ?", [
+      return await db.runAsync(`DELETE FROM products WHERE id = ?`, [
         productId,
       ]);
     },
 
-    //Pin / Unpin
+    // =========================
+    // Pin / Unpin
+    // =========================
     togglePin: async (productId: number, isPinned: boolean) => {
       return await db.runAsync(
         `
@@ -214,7 +263,9 @@ export const stockController = (db: SQLiteDatabase) => {
       );
     },
 
-    // Fetch every batch in the database (for Context)
+    // =========================
+    // All Batches (Context)
+    // =========================
     getAllBatches: async (): Promise<StockItem[]> => {
       const rows = await db.getAllAsync<any>(
         `SELECT * FROM stock_items ORDER BY created_at DESC`
@@ -231,9 +282,11 @@ export const stockController = (db: SQLiteDatabase) => {
       }));
     },
 
-    // Delete a specific batch by ID
+    // =========================
+    // Delete Batch
+    // =========================
     deleteBatch: async (batchId: number) => {
-      return await db.runAsync("DELETE FROM stock_items WHERE id = ?", [
+      return await db.runAsync(`DELETE FROM stock_items WHERE id = ?`, [
         batchId,
       ]);
     },

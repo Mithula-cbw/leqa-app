@@ -5,15 +5,20 @@ export interface Product {
   title: string;
   description: string;
   weight_value: number;
-  weight_unit: 'g' | 'kg';
+  weight_unit: "g" | "kg";
   price: number;
   image?: string | null;
   total_stock: number;
-  shelf_life_value: number | null;
-  shelf_life_unit: "days" | "hours" | "years";
-  warning_period_value: number | null;
-  warning_period_unit: "days" | "hours" | "years";
-  is_pinned: 0 | 1;    
+  do_expire: 0 | 1;
+  shelf_life_years: number | null;
+  shelf_life_months: number | null;
+  shelf_life_days: number | null;
+  shelf_life_hours: number | null;
+  do_warn: 0 | 1;
+  warning_period_months: number | null;
+  warning_period_days: number | null;
+  warning_period_hours: number | null;
+  is_pinned: 0 | 1;
   sort_order: number;
 }
 

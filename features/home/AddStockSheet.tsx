@@ -12,7 +12,8 @@ import { Product } from "@/types/stock";
 import { AddedProductItem, AddQuickProductChip } from "@/components/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
-import { addTime } from "@/utils/addTime";
+import { addDuration } from "@/utils/addDuration";
+import { router } from "expo-router";
 
 interface StagedProduct {
   product: Product;
@@ -48,14 +49,22 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const addProductToStaging = (product: Product) => {
     if (stagedItems.find((item) => item.product.id === product.id)) return;
 
-    const shelfValue = product.shelf_life_value ?? 7;
-    const shelfUnit = product.shelf_life_unit ?? "days";
-    const expiryDate = addTime(new Date(), shelfValue, shelfUnit);
+    const now = new Date();
 
-    const warnValue =
-      product.warning_period_value ?? Math.ceil(shelfValue * 0.1);
-    const warnUnit = product.warning_period_unit ?? "days";
-    const warnDate = addTime(expiryDate, -warnValue, warnUnit);
+    // EXPIRY
+    const expiryDate = addDuration(now, {
+      years: product.shelf_life_years ?? 0,
+      months: product.shelf_life_months ?? 1,
+      days: product.shelf_life_days ?? 0,
+      hours: product.shelf_life_hours ?? 0,
+    });
+
+    // --------- WARNING ----------
+    const warnDate = addDuration(expiryDate, {
+      months: -(product.warning_period_months ?? 0),
+      days: -(product.warning_period_days ?? 1),
+      hours: -(product.warning_period_hours ?? 0),
+    });
 
     setStagedItems([
       ...stagedItems,
@@ -163,13 +172,37 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 10 }}
           >
-            {displayData.map((p) => (
-              <AddQuickProductChip
-                key={p.id}
-                product={p}
-                onPress={addProductToStaging}
-              />
-            ))}
+            {displayData.length === 0 ? (
+              /* Replace null with a 'No Products' component if desired */
+              <View style={styles.emptyWrap}>
+                <ThemedText style={styles.emptyText}>
+                  No products yet
+                </ThemedText>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                  onPress={() => router.push("/add-product")}
+                >
+                  <Ionicons name="add" size={16} color={primaryBtn} />
+                  <ThemedText style={styles.emptyLink}>
+                    Create new product
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              displayData.map((p) => (
+                <AddQuickProductChip
+                  key={p.id}
+                  product={p}
+                  onPress={addProductToStaging}
+                />
+              ))
+            )}
           </ScrollView>
         </View>
 
@@ -310,6 +343,18 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingVertical: 20,
+  },
+  emptyWrap: {
+    width: "100%",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingVertical: 5,
+    gap: 0,
+  },
+  emptyLink: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#9e7913ff",
   },
   primaryButton: {
     borderRadius: 14,

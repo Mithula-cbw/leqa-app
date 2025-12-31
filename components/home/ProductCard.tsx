@@ -18,7 +18,7 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import ProductSkeleton from "./ProductSkeleton";
 import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
-import { addTime } from "@/utils/addTime";
+import { addTime } from "@/utils/addDuration";
 
 export type ReduceMode = "one" | "all";
 
