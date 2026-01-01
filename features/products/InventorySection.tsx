@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { StyleSheet, SectionList } from "react-native";
 import { useStock } from "@/contexts/StockContext";
 import { StockItem } from "@/types/stock";
@@ -11,7 +11,8 @@ interface Props {
 }
 
 const InventorySection = ({ productId, ListHeaderComponent }: Props) => {
-  const { batches, controller, refreshProducts } = useStock();
+  const { batches } = useStock();
+  
 
   console.log("batches", batches); // dev-log
 
@@ -42,15 +43,6 @@ const InventorySection = ({ productId, ListHeaderComponent }: Props) => {
     }));
   }, [batches, productId]);
 
-  const handleDeleteBatch = async (batchId: number) => {
-    try {
-      await controller.deleteBatch(batchId);
-      await refreshProducts();
-    } catch (error) {
-      console.error("Failed to delete batch", error);
-    }
-  };
-
   return (
     <SectionList
       sections={sections}
@@ -65,7 +57,7 @@ const InventorySection = ({ productId, ListHeaderComponent }: Props) => {
         <BatchAccordion
           title={`Batch #${item.batchNumber}`}
           items={item.items}
-          onDelete={handleDeleteBatch}
+          batchNumber={item.batchNumber}
         />
       )}
       contentContainerStyle={styles.listPadding}

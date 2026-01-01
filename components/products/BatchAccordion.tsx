@@ -8,9 +8,10 @@ import {
   UIManager,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/shared";
+import { AlertDialog, ThemedText } from "@/components/shared";
 import { StockItem } from "@/types/stock";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { useStock } from "@/contexts/StockContext";
 
 if (
   Platform.OS === "android" &&
@@ -22,13 +23,29 @@ if (
 interface Props {
   title: string;
   items: StockItem[];
-  onDelete: (batchId: number) => void;
+  batchNumber: string;
 }
 
-const BatchAccordion = ({ title, items, onDelete }: Props) => {
+const BatchAccordion = ({ title, items, batchNumber }: Props) => {
+  const { controller, refreshProducts } = useStock();
   const [expanded, setExpanded] = useState(false);
+  const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
+
   const bgSecondary = useThemeColor({}, "background-seconary");
   const borderColor = useThemeColor({}, "icon");
+
+  const handleDeleteBatch = async () => {
+    setDeleteAlertVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await controller.deleteBatch(items[0].id);
+      await refreshProducts();
+    } catch (error) {
+      console.error("Failed to delete batch", error);
+    }
+  };
 
   const summaryStatus = useMemo(() => {
     const now = new Date();
@@ -149,7 +166,7 @@ const BatchAccordion = ({ title, items, onDelete }: Props) => {
                 </View>
 
                 <TouchableOpacity
-                  onPress={() => onDelete(item.id)}
+                  onPress={handleDeleteBatch}
                   style={styles.deleteBtn}
                 >
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
@@ -159,6 +176,15 @@ const BatchAccordion = ({ title, items, onDelete }: Props) => {
           })}
         </View>
       )}
+      <AlertDialog
+        isVisible={deleteAlertVisible}
+        onClose={() => setDeleteAlertVisible(false)}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        description={`Are you sure you want to delete #${batchNumber} Batch? This cannot be undone.`}
+        confirmText="Delete"
+        isDestructive
+      />
     </View>
   );
 };
