@@ -7,12 +7,13 @@ import { ThemedText } from "@/components/shared";
 
 interface Props {
   productId: number;
+  ListHeaderComponent?: React.ReactElement;
 }
 
-const InventorySection = ({ productId }: Props) => {
+const InventorySection = ({ productId, ListHeaderComponent }: Props) => {
   const { batches, controller, refreshProducts } = useStock();
 
-  console.log("batches", batches) // dev-log
+  console.log("batches", batches); // dev-log
 
   const sections = useMemo(() => {
     const productBatches = batches.filter((b) => b.product_id === productId);
@@ -50,13 +51,13 @@ const InventorySection = ({ productId }: Props) => {
     }
   };
 
-
-
   return (
     <SectionList
       sections={sections}
       keyExtractor={(item) => item.batchNumber}
       stickySectionHeadersEnabled={false}
+      // Pass the header here so it scrolls with the list
+      ListHeaderComponent={ListHeaderComponent}
       renderSectionHeader={({ section: { title } }) => (
         <ThemedText style={styles.sectionHeaderText}>{title}</ThemedText>
       )}
@@ -75,7 +76,7 @@ const InventorySection = ({ productId }: Props) => {
 export default InventorySection;
 
 const styles = StyleSheet.create({
-  listPadding: { paddingBottom: 40 },
+  listPadding: { paddingBottom: 280 },
   sectionHeaderText: {
     fontSize: 13,
     fontWeight: "700",

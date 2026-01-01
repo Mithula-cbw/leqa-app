@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   secondaryText: { fontWeight: "700" },
 
-  card: { borderRadius: 18, padding: 16, gap: 14 },
+  card: { borderRadius: 18, paddingVertical: 16, paddingHorizontal: 8, gap: 14 },
   settingRow: {
     flexDirection: "row",
     justifyContent: "space-between",

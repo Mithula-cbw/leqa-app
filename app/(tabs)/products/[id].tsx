@@ -24,22 +24,17 @@ export default function ProductDetail() {
     );
   }
 
+  const Header = (
+    <>
+      <ProductHero product={product} />
+      <View style={styles.divider} />
+      <ProductInfoSection product={product} />
+    </>
+  );
+
   return (
     <View style={styles.container}>
-      {/* FIXED HERO */}
-      <ProductHero product={product} />
-
-      {/* SCROLLABLE CONTENT */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.divider} />
-
-        <ProductInfoSection product={product} />
-        <InventorySection productId={product.id} />
-      </ScrollView>
+      <InventorySection productId={product.id} ListHeaderComponent={Header} />
     </View>
   );
 }
