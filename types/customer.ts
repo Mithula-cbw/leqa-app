@@ -7,6 +7,7 @@ export interface Customer {
   name: string;
   phone: string | null;
   email: string | null;
+  is_pinned: 0 | 1;
   created_at: string;
 }
 

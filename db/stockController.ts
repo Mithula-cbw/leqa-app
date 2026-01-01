@@ -270,9 +270,9 @@ export const stockController = (db: SQLiteDatabase) => {
     },
 
     getAllCustomers: async () => {
-      // Returns customers and their total purchase count/value if needed
       return await db.getAllAsync<any>(
-        `SELECT * FROM customers ORDER BY name ASC`
+        `SELECT * FROM customers 
+     ORDER BY is_pinned DESC, name ASC`
       );
     },
 
@@ -284,7 +284,7 @@ export const stockController = (db: SQLiteDatabase) => {
       field: string,
       value: any
     ) => {
-      const allowedFields = ["name", "image", "phone", "email"];
+      const allowedFields = ["name", "image", "phone", "email", "is_pinned"];
       if (!allowedFields.includes(field)) {
         throw new Error(`Field ${field} is not editable.`);
       }
@@ -312,6 +312,12 @@ export const stockController = (db: SQLiteDatabase) => {
         [...values, customerId]
       );
     },
+
+    toggleCustomerPin: async (id: number, pin: boolean) =>
+      await db.runAsync(`UPDATE customers SET is_pinned = ? WHERE id = ?`, [
+        pin ? 1 : 0,
+        id,
+      ]),
 
     deleteCustomer: async (id: number) => {
       // Warning: You might want to check if they have transactions first

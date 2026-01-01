@@ -63,6 +63,7 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
         image TEXT,
         phone TEXT,
         email TEXT,
+        is_pinned INTEGER DEFAULT 0, -- 0 for false, 1 for true,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 

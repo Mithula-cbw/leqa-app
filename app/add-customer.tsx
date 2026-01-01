@@ -19,7 +19,7 @@ import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export default function AddCustomerScreen() {
-  const { controller } = useStock();
+  const { controller, refreshCustomers } = useStock();
   const bgSecondary = useThemeColor({}, "background-seconary");
   const tint = useThemeColor({}, "background-muted");
   const iconMuted = useThemeColor({}, "icon");
@@ -57,6 +57,7 @@ export default function AddCustomerScreen() {
         form.email || null
       );
 
+      await refreshCustomers();
       router.back();
     } catch (e: any) {
       console.error("Database Error:", e);
