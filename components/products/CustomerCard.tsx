@@ -2,7 +2,7 @@
 // Leqa © 2025 Mithula Chanthuka
 
 import React, { useState } from "react";
-import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Image, TouchableOpacity, ToastAndroid } from "react-native";
 import {
   AntDesign,
   Ionicons,
@@ -46,6 +46,10 @@ const CustomerCard = ({ item }: { item: Customer }) => {
         await controller.toggleCustomerPin(item.id, item.is_pinned === 0);
         break;
       case "delete":
+        if (item.id === 1 ) {
+          ToastAndroid.show("Can't Delete the default Customer", ToastAndroid.SHORT);
+          return;
+        }
         setDeleteAlertVisible(true);
         return;
     }

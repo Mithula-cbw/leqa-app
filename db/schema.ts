@@ -94,6 +94,11 @@ export const initializeDatabase = async (db: SQLiteDatabase) => {
       );
     `);
 
+    await db.runAsync(`
+      INSERT OR IGNORE INTO customers (id, name, email, is_pinned) 
+      VALUES (1, 'Unknown', 'default@system.local', 1);
+    `);
+
     console.log("Database tables and relations initialized.");
   } catch (error) {
     console.error("Error initializing database:", error);

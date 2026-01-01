@@ -70,12 +70,7 @@ const CustomerOptionsModal: React.FC<CustomerOptionsModalProps> = ({
         color={color || iconMuted}
         style={styles.optionIcon}
       />
-      <ThemedText
-        style={[
-          styles.optionText,
-          color && { color },
-        ]}
-      >
+      <ThemedText style={[styles.optionText, color && { color }]}>
         {label}
       </ThemedText>
     </TouchableOpacity>
@@ -118,14 +113,15 @@ const CustomerOptionsModal: React.FC<CustomerOptionsModalProps> = ({
             label={isPinned ? "Unpin Customer" : "Pin to top"}
             type="pin"
           />
-
-          <Option
-            icon="trash-outline"
-            label="Delete Customer"
-            type="delete"
-            color="#FF3B30"
-            isLast
-          />
+          {customer.id !== 1 && (
+            <Option
+              icon="trash-outline"
+              label="Delete Customer"
+              type="delete"
+              color="#FF3B30"
+              isLast
+            />
+          )}
         </ThemedView>
       </Pressable>
     </Modal>
