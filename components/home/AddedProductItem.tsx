@@ -17,10 +17,10 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 interface Props {
   product: Product;
   quantity: number;
-  expiryDate: Date;
-  warnDate: Date;
-  onUpdateWarn: (date: Date) => void;
-  onUpdateExpiry: (date: Date) => void;
+  expiryDate: Date | null;
+  warnDate: Date | null;
+  onUpdateWarn: (date: Date | null) => void;
+  onUpdateExpiry: (date: Date | null) => void;
   onUpdateQty: (qty: number) => void;
   onRemove: () => void;
 }
@@ -40,55 +40,65 @@ const AddedProductItem = ({
   const [showPicker, setShowPicker] = useState(false);
   const [warnUnit, setWarnUnit] = useState<"days" | "hours">("days");
 
+  const hasExpiry = expiryDate instanceof Date;
+  const hasWarn = warnDate instanceof Date;
+
   const borderColor = useThemeColor({}, "background-muted");
   const iconColor = useThemeColor({}, "text");
   const accentColor = "#007AFF";
 
   const handleQtyInput = (value: string) => {
-    const cleanValue = value.replace(/[^0-9]/g, "");
-    const num = cleanValue === "" ? 0 : parseInt(cleanValue, 10);
+    const clean = value.replace(/[^0-9]/g, "");
+    const num = clean === "" ? 0 : parseInt(clean, 10);
     onUpdateQty(num);
   };
 
   const openPicker = (mode: "date" | "time") => {
+    if (!hasExpiry) return;
     setPickerMode(mode);
     setShowPicker(true);
   };
 
-  const onPickerChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") {
-      setShowPicker(false);
-    }
-
-    if (selectedDate && event.type !== "dismissed") {
-      onUpdateExpiry(selectedDate);
-    }
+  const onPickerChange = (_: any, selected?: Date) => {
+    if (Platform.OS === "android") setShowPicker(false);
+    if (selected) onUpdateExpiry(selected);
   };
 
-  const getWarnDaysBefore = () => {
-    const diffTime = expiryDate.getTime() - warnDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+  const getWarnValue = () => {
+    if (!hasExpiry || !hasWarn) return 0;
+
+    const diff = expiryDate!.getTime() - warnDate!.getTime();
+
+    return warnUnit === "days"
+      ? Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+      : Math.max(0, Math.ceil(diff / (1000 * 60 * 60)));
   };
 
-  const handleWarnChange = (days: number) => {
-    const newWarnDate = new Date(expiryDate);
-    newWarnDate.setDate(newWarnDate.getDate() - days);
-    onUpdateWarn(newWarnDate);
+  const updateWarnFromValue = (value: number) => {
+    if (!hasExpiry) return;
+
+    const d = new Date(expiryDate!);
+
+    if (warnUnit === "days") d.setDate(d.getDate() - value);
+    else d.setHours(d.getHours() - value);
+
+    onUpdateWarn(d);
   };
 
   return (
     <View style={[styles.container, { borderColor }]}>
+      {/* MAIN ROW */}
       <View style={styles.mainRow}>
         <View style={{ flex: 1 }}>
           <ThemedText type="defaultSemiBold" numberOfLines={1}>
             {product.title}
           </ThemedText>
-          <ThemedText style={styles.subText}>{`${product.weight_value} ${
-            product.weight_unit ?? "g"
-          }`}</ThemedText>
+          <ThemedText style={styles.subText}>
+            {product.weight_value} {product.weight_unit ?? "g"}
+          </ThemedText>
         </View>
 
+        {/* QTY */}
         <View style={styles.qtyContainer}>
           <TouchableOpacity
             onPress={() => onUpdateQty(Math.max(1, quantity - 1))}
@@ -102,9 +112,7 @@ const AddedProductItem = ({
             keyboardType="number-pad"
             value={String(quantity)}
             onChangeText={handleQtyInput}
-            onBlur={() => {
-              if (!quantity) onUpdateQty(1);
-            }}
+            onBlur={() => !quantity && onUpdateQty(1)}
           />
 
           <TouchableOpacity
@@ -115,10 +123,16 @@ const AddedProductItem = ({
           </TouchableOpacity>
         </View>
 
+        {/* ACTIONS */}
         <View style={styles.actions}>
           <TouchableOpacity
-            onPress={() => setIsExpanded(!isExpanded)}
-            style={[styles.iconBtn, isExpanded && styles.activeIconBtn]}
+            disabled={!hasExpiry}
+            onPress={() => setIsExpanded((v) => !v)}
+            style={[
+              styles.iconBtn,
+              isExpanded && styles.activeIconBtn,
+              !hasExpiry && { opacity: 0.3 },
+            ]}
           >
             <Ionicons
               name="time-outline"
@@ -133,10 +147,11 @@ const AddedProductItem = ({
         </View>
       </View>
 
-      {isExpanded && (
+      {/* EXPANDED */}
+      {isExpanded && hasExpiry && (
         <>
           <View style={styles.accordionContent}>
-            <ThemedText style={styles.label}>Expiry Date & Time</ThemedText>
+            <ThemedText style={styles.label}>Expiry</ThemedText>
 
             <View style={styles.pickerRow}>
               <TouchableOpacity
@@ -148,22 +163,16 @@ const AddedProductItem = ({
                   size={16}
                   color={accentColor}
                 />
-                <ThemedText style={styles.selectorText}>
-                  {expiryDate.toLocaleDateString()}
-                </ThemedText>
+                <ThemedText>{expiryDate!.toLocaleDateString()}</ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.selectorPill, { borderColor }]}
                 onPress={() => openPicker("time")}
               >
-                <Ionicons
-                  name="stopwatch-outline"
-                  size={16}
-                  color={accentColor}
-                />
-                <ThemedText style={styles.selectorText}>
-                  {expiryDate.toLocaleTimeString([], {
+                <Ionicons name="time-outline" size={16} color={accentColor} />
+                <ThemedText>
+                  {expiryDate!.toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -172,97 +181,53 @@ const AddedProductItem = ({
             </View>
 
             {showPicker && (
-              <View
-                style={Platform.OS === "ios" ? styles.iosPickerContainer : null}
-              >
-                <DateTimePicker
-                  value={expiryDate}
-                  mode={pickerMode}
-                  is24Hour={true}
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={onPickerChange}
-                />
-                {Platform.OS === "ios" && (
-                  <TouchableOpacity
-                    onPress={() => setShowPicker(false)}
-                    style={styles.doneBtn}
-                  >
-                    <ThemedText
-                      style={{ color: accentColor, fontWeight: "600" }}
-                    >
-                      Done
-                    </ThemedText>
-                  </TouchableOpacity>
-                )}
-              </View>
+              <DateTimePicker
+                value={expiryDate!}
+                mode={pickerMode}
+                is24Hour
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={onPickerChange}
+              />
             )}
           </View>
-          <ThemedText style={styles.label}>Warn Before Expiry</ThemedText>
 
-          <View style={[styles.pickerRow, { marginBottom: 12 }]}>
-            {/* Number Input */}
-            <TextInput
-              style={[
-                styles.qtyInput,
-                {
-                  flex: 1,
-                  textAlign: "center",
-                  borderWidth: 1,
-                  borderColor: borderColor,
-                  borderRadius: 10,
-                  padding: 8,
-                },
-              ]}
-              keyboardType="number-pad"
-              value={String(getWarnDaysBefore())}
-              onChangeText={(val) => {
-                const num = parseInt(val.replace(/[^0-9]/g, ""), 10) || 1;
-                handleWarnChange(num);
-              }}
-            />
+          {hasWarn && (
+            <>
+              <ThemedText style={styles.label}>Warn Before</ThemedText>
 
-            {/* Unit Selector */}
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {(["days", "hours"] as const).map((unit) => (
-                <TouchableOpacity
-                  key={unit}
-                  onPress={() => {
-                    setWarnUnit(unit); // update selected unit
-                    const diffTime = expiryDate.getTime() - warnDate.getTime();
-                    let newValue =
-                      unit === "days"
-                        ? Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                        : Math.ceil(diffTime / (1000 * 60 * 60));
-                    const newWarnDate = new Date(expiryDate);
-                    if (unit === "days")
-                      newWarnDate.setDate(newWarnDate.getDate() - newValue);
-                    else
-                      newWarnDate.setHours(newWarnDate.getHours() - newValue);
+              <View style={styles.pickerRow}>
+                <TextInput
+                  style={[styles.qtyInput]}
+                  keyboardType="number-pad"
+                  value={String(getWarnValue())}
+                  onChangeText={(v) => updateWarnFromValue(parseInt(v) || 0)}
+                />
 
-                    onUpdateWarn(newWarnDate);
-                  }}
-                  style={[
-                    styles.unitBtn,
-                    warnUnit === unit && styles.activeUnit, // active styling based on state
-                  ]}
-                >
-                  <ThemedText
+                {(["days", "hours"] as const).map((unit) => (
+                  <TouchableOpacity
+                    key={unit}
+                    onPress={() => setWarnUnit(unit)}
                     style={[
-                      styles.unitText,
-                      warnUnit === unit && styles.activeUnitText,
+                      styles.unitBtn,
+                      warnUnit === unit && styles.activeUnit,
                     ]}
                   >
-                    {unit}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+                    <ThemedText
+                      style={warnUnit === unit && styles.activeUnitText}
+                    >
+                      {unit}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
         </>
       )}
     </View>
   );
 };
+
 export default AddedProductItem;
 
 const styles = StyleSheet.create({

@@ -18,8 +18,8 @@ import { router } from "expo-router";
 interface StagedProduct {
   product: Product;
   quantity: number;
-  expiryDate: Date;
-  warnDate: Date;
+  expiryDate: Date | null;
+  warnDate: Date | null;
 }
 
 const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
@@ -51,30 +51,38 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
 
     const now = new Date();
 
+    let expiryDate: Date | null = null;
+    let warnDate: Date | null = null;
+
     // EXPIRY
-    const expiryDate = addDuration(now, {
-      years: product.shelf_life_years ?? 0,
-      months: product.shelf_life_months ?? 1,
-      days: product.shelf_life_days ?? 0,
-      hours: product.shelf_life_hours ?? 0,
-    });
+    if (product.do_expire) {
+      expiryDate = addDuration(now, {
+        years: product.shelf_life_years ?? 0,
+        months: product.shelf_life_months ?? 1,
+        days: product.shelf_life_days ?? 0,
+        hours: product.shelf_life_hours ?? 0,
+      });
 
-    // --------- WARNING ----------
-    const warnDate = addDuration(expiryDate, {
-      months: -(product.warning_period_months ?? 0),
-      days: -(product.warning_period_days ?? 1),
-      hours: -(product.warning_period_hours ?? 0),
-    });
+      // WARNING (only if expiry exists)
+      if (product.do_warn) {
+        warnDate = addDuration(expiryDate, {
+          months: -(product.warning_period_months ?? 0),
+          days: -(product.warning_period_days ?? 1),
+          hours: -(product.warning_period_hours ?? 0),
+        });
+      }
+    }
 
-    setStagedItems([
-      ...stagedItems,
+    setStagedItems((prev) => [
+      ...prev,
       {
         product,
         quantity: 1,
-        expiryDate: expiryDate,
-        warnDate: warnDate,
+        expiryDate,
+        warnDate,
       },
     ]);
+
     setSearch("");
   };
 
@@ -88,8 +96,8 @@ const AddStockSheet = ({ onFinish }: { onFinish: () => void }) => {
         await controller.addStockBatch(
           item.product.id,
           item.quantity,
-          item.expiryDate,
-          item.warnDate,
+          item.product.do_expire ? item.expiryDate : null,
+          item.product.do_warn && item.product.do_expire ? item.warnDate : null,
           sharedBatchId
         );
       }

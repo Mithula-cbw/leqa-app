@@ -91,7 +91,7 @@ const BatchAccordion = ({ title, items, onDelete }: Props) => {
               <ThemedText
                 style={[styles.headerSub, { color: summaryStatus.color }]}
               >
-                {items.length} units • {summaryStatus.label}
+                {items[0].quantity} units • {summaryStatus.label}
               </ThemedText>
             )}
           </View>
