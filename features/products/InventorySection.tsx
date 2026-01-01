@@ -14,7 +14,7 @@ const InventorySection = ({ productId, ListHeaderComponent }: Props) => {
   const { batches } = useStock();
   
 
-  console.log("batches", batches); // dev-log
+  console.log("batches", batches);
 
   const sections = useMemo(() => {
     const productBatches = batches.filter((b) => b.product_id === productId);

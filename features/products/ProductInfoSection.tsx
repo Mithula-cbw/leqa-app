@@ -15,7 +15,13 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import TimeRangePicker, { TimePickerValue } from "@/components/ui/TimePicker";
 import { formatDuration } from "@/utils/formatText";
 
-const ProductInfoSection = ({ product }: { product: Product }) => {
+const ProductInfoSection = ({
+  product,
+  onStock,
+}: {
+  product: Product;
+  onStock: () => void;
+}) => {
   const { controller, refreshProducts } = useStock();
 
   const bgSecondary = useThemeColor({}, "background-seconary");
@@ -46,7 +52,7 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
 
   const handleToggle = async (field: keyof Product, value: boolean) => {
     const numericValue = value ? 1 : 0;
-    
+
     // Update the product blueprint
     await controller.updateProductField(product.id, field, numericValue);
 
@@ -62,13 +68,16 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
         // Enabled: Re-calculate dates for every batch based on its creation date
         const batches = await controller.getProductBatches(product.id);
         for (const batch of batches) {
-          const { expiry, warn } = calculateDates(new Date(batch.created_at), product);
+          const { expiry, warn } = calculateDates(
+            new Date(batch.created_at),
+            product
+          );
           // We use updateAllBatchesForProduct with a filter or a specific batch updater
-          // Since our controller currently updates 'all' by product_id, we need 
+          // Since our controller currently updates 'all' by product_id, we need
           // to ensure we aren't overwriting different batch dates with one single date.
-          // For now, we will update all to the same calculated default from 'now' 
+          // For now, we will update all to the same calculated default from 'now'
           // unless you add an 'updateBatchById' method.
-          
+
           const defaultSync = calculateDates(new Date(), product);
           await controller.updateAllBatchesForProduct(product.id, {
             expiry_at: defaultSync.expiry,
@@ -77,25 +86,35 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
         }
       }
     }
-    
+
     // If toggling Warning specifically
     if (field === "do_warn" && product.do_expire) {
-       if (!value) {
-         await controller.updateAllBatchesForProduct(product.id, { warn_at: null });
-       } else {
-         // Enable warnings: calculate warn date based on existing expiry_at
-         const batches = await controller.getProductBatches(product.id);
-         for (const batch of batches) {
-            if (batch.expiry_at) {
-                const expiry = new Date(batch.expiry_at);
-                expiry.setMonth(expiry.getMonth() - (product.warning_period_months || 0));
-                expiry.setDate(expiry.getDate() - (product.warning_period_days || 0));
-                expiry.setHours(expiry.getHours() - (product.warning_period_hours || 0));
-                // Mass update for simplicity in this version:
-                await controller.updateAllBatchesForProduct(product.id, { warn_at: expiry });
-            }
-         }
-       }
+      if (!value) {
+        await controller.updateAllBatchesForProduct(product.id, {
+          warn_at: null,
+        });
+      } else {
+        // Enable warnings: calculate warn date based on existing expiry_at
+        const batches = await controller.getProductBatches(product.id);
+        for (const batch of batches) {
+          if (batch.expiry_at) {
+            const expiry = new Date(batch.expiry_at);
+            expiry.setMonth(
+              expiry.getMonth() - (product.warning_period_months || 0)
+            );
+            expiry.setDate(
+              expiry.getDate() - (product.warning_period_days || 0)
+            );
+            expiry.setHours(
+              expiry.getHours() - (product.warning_period_hours || 0)
+            );
+            // Mass update for simplicity in this version:
+            await controller.updateAllBatchesForProduct(product.id, {
+              warn_at: expiry,
+            });
+          }
+        }
+      }
     }
 
     await refreshProducts();
@@ -105,9 +124,18 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
     setActiveField(type);
     setTempTime({
       year: type === "shelf" ? product.shelf_life_years || 0 : 0,
-      month: type === "shelf" ? product.shelf_life_months || 0 : product.warning_period_months || 0,
-      day: type === "shelf" ? product.shelf_life_days || 0 : product.warning_period_days || 0,
-      hour: type === "shelf" ? product.shelf_life_hours || 0 : product.warning_period_hours || 0,
+      month:
+        type === "shelf"
+          ? product.shelf_life_months || 0
+          : product.warning_period_months || 0,
+      day:
+        type === "shelf"
+          ? product.shelf_life_days || 0
+          : product.warning_period_days || 0,
+      hour:
+        type === "shelf"
+          ? product.shelf_life_hours || 0
+          : product.warning_period_hours || 0,
     });
     setModalVisible(true);
   };
@@ -115,28 +143,29 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
   const handleSaveTime = async () => {
     if (!activeField || !tempTime) return;
 
-    const updates = activeField === "shelf" 
-      ? {
-          shelf_life_years: tempTime.year,
-          shelf_life_months: tempTime.month,
-          shelf_life_days: tempTime.day,
-          shelf_life_hours: tempTime.hour,
-        }
-      : {
-          warning_period_months: tempTime.month,
-          warning_period_days: tempTime.day,
-          warning_period_hours: tempTime.hour,
-        };
+    const updates =
+      activeField === "shelf"
+        ? {
+            shelf_life_years: tempTime.year,
+            shelf_life_months: tempTime.month,
+            shelf_life_days: tempTime.day,
+            shelf_life_hours: tempTime.hour,
+          }
+        : {
+            warning_period_months: tempTime.month,
+            warning_period_days: tempTime.day,
+            warning_period_hours: tempTime.hour,
+          };
 
     await controller.updateProductFields(product.id, updates);
 
     // After updating the "Blueprint", sync existing batches to match new duration
     if (product.do_expire) {
-       const syncDate = calculateDates(new Date(), { ...product, ...updates });
-       await controller.updateAllBatchesForProduct(product.id, {
-         expiry_at: syncDate.expiry,
-         warn_at: product.do_warn ? syncDate.warn : null
-       });
+      const syncDate = calculateDates(new Date(), { ...product, ...updates });
+      await controller.updateAllBatchesForProduct(product.id, {
+        expiry_at: syncDate.expiry,
+        warn_at: product.do_warn ? syncDate.warn : null,
+      });
     }
 
     await refreshProducts();
@@ -160,14 +189,21 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
 
       {/* ACTIONS */}
       <View style={styles.actionRow}>
-        <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: bgPrimary }]}>
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: bgPrimary }]}
+        >
           <Ionicons name="cart-outline" size={20} color="#fff" />
           <ThemedText style={styles.primaryText}>Sell</ThemedText>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: bgSecondary }]}>
+        <TouchableOpacity
+          onPress={onStock}
+          style={[styles.secondaryBtn, { backgroundColor: bgSecondary, borderColor: bgPrimary }]}
+        >
           <Ionicons name="add" size={22} color={bgPrimary} />
-          <ThemedText style={[styles.secondaryText, { color: bgPrimary }]}>Restock</ThemedText>
+          <ThemedText style={[styles.secondaryText, { color: bgPrimary }]}>
+            Restock
+          </ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -188,7 +224,10 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
         </View>
 
         {product.do_expire === 1 && (
-          <TouchableOpacity style={styles.subRow} onPress={() => openPicker("shelf")}>
+          <TouchableOpacity
+            style={styles.subRow}
+            onPress={() => openPicker("shelf")}
+          >
             <Ionicons name="calendar-outline" size={16} color={bgPrimary} />
             <ThemedText style={styles.subText}>
               Shelf life{" "}
@@ -221,8 +260,15 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
         </View>
 
         {product.do_warn === 1 && product.do_expire === 1 && (
-          <TouchableOpacity style={styles.subRow} onPress={() => openPicker("warn")}>
-            <Ionicons name="notifications-outline" size={16} color={bgPrimary} />
+          <TouchableOpacity
+            style={styles.subRow}
+            onPress={() => openPicker("warn")}
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={16}
+              color={bgPrimary}
+            />
             <ThemedText style={styles.subText}>
               Warn{" "}
               <ThemedText style={styles.subStrong}>
@@ -241,7 +287,10 @@ const ProductInfoSection = ({ product }: { product: Product }) => {
 
       {/* MODAL */}
       <Modal visible={modalVisible} transparent animationType="fade">
-        <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setModalVisible(false)}
+        >
           <Pressable style={styles.modal}>
             <ThemedText style={styles.modalTitle}>
               {activeField === "shelf" ? "Shelf Life" : "Warning Time"}
@@ -293,9 +342,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
+    borderWidth: 1,
   },
   secondaryText: { fontWeight: "700" },
-  card: { borderRadius: 18, paddingVertical: 16, paddingHorizontal: 12, gap: 14 },
+  card: {
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    gap: 14,
+  },
   settingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
