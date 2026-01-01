@@ -310,5 +310,36 @@ export const stockController = (db: SQLiteDatabase) => {
         batchId,
       ]);
     },
+
+    // ===========================================
+    // Update All Batches for a Specific Product
+    // ===========================================
+    updateAllBatchesForProduct: async (
+      productId: number,
+      updates: Record<string, any>
+    ) => {
+      const fields = Object.keys(updates);
+      const values = Object.values(updates);
+
+      // Prevent updating sensitive relational fields like product_id
+      const restricted = ["id", "product_id"];
+      const filteredFields = fields.filter((f) => !restricted.includes(f));
+      
+      if (filteredFields.length === 0) return;
+
+      // Map values to DB format (handling Dates)
+      const dbValues = filteredFields.map(f => {
+        const val = updates[f];
+        return val instanceof Date ? toDbDate(val) : val;
+      });
+
+      // Build: "field1 = ?, field2 = ?"
+      const setClause = filteredFields.map((f) => `${f} = ?`).join(", ");
+
+      return await db.runAsync(
+        `UPDATE stock_items SET ${setClause} WHERE product_id = ?`,
+        [...dbValues, productId]
+      );
+    },
   };
 };
