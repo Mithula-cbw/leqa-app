@@ -19,6 +19,7 @@ import ProductSkeleton from "./ProductSkeleton";
 import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
 import { addDuration } from "@/utils/addDuration";
+import { ReductionReason } from "@/types/customer";
 
 export type ReduceMode = "one" | "all";
 
@@ -48,8 +49,8 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const handleIncrease = async () => {
-    console.log("do shelf_life_days", item.shelf_life_years) // dev-log
-    console.log("do warn", item.do_warn) // dev-log
+    console.log("do shelf_life_days", item.shelf_life_years); // dev-log
+    console.log("do warn", item.do_warn); // dev-log
 
     // Check if expiration logic is active for this specific product
     const isExpireActive = item.do_expire === 1;
@@ -121,17 +122,22 @@ const ProductCard = ({ item }: { item: Product }) => {
     await refreshProducts();
   };
 
-  const onReduceConfirm = async () => {
-    if (item.total_stock <= 0) return;
+  const onReduceConfirm = async (type: ReductionReason) => {
+    if (!item.total_stock || Number(item.total_stock) <= 0) return;
+
+    const stockToReduce = Number(item.total_stock);
 
     if (reduceMode === "all") {
-      await controller.reduceStock(item.id, item.total_stock);
+      await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
+        note: `Bulk ${type} of entire stock`,
+      });
     } else {
-      await controller.reduceStock(item.id, 1);
+      await controller.reduceStockWithLogic(item.id, 1, type, {
+        price: item.price,
+      });
     }
 
     await refreshProducts();
-    setReduceModal(false);
   };
 
   if (loading) return <ProductSkeleton />;

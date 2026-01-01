@@ -338,6 +338,7 @@ export default function AddProductScreen() {
               initialValue={form.warningPeriod}
               onValueChange={(v) => setForm({ ...form, warningPeriod: v })}
               accentColor={tint}
+              hideYear={true}
             />
           </View>
         )}

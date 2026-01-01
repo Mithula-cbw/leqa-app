@@ -14,6 +14,7 @@ import { useStock } from "@/contexts/StockContext";
 import ProductOptionsModal from "./ProductOptionsModal";
 import ProductCardSkeleton from "./ProductSkeleton";
 import { ReduceMode } from "../home/ProductCard";
+import { ReductionReason } from "@/types/customer";
 
 export type ProductAction = "view" | "edit" | "pin" | "empty" | "delete";
 
@@ -42,17 +43,22 @@ const ProductCard = ({ item }: { item: Product }) => {
     });
   };
 
-  const onReduceConfirm = async () => {
-    if (item.total_stock <= 0) return;
+  const onReduceConfirm = async (type: ReductionReason) => {
+    if (!item.total_stock || Number(item.total_stock) <= 0) return;
+
+    const stockToReduce = Number(item.total_stock);
 
     if (reduceMode === "all") {
-      await controller.reduceStock(item.id, item.total_stock);
+      await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
+        note: `Bulk ${type} of entire stock`,
+      });
     } else {
-      await controller.reduceStock(item.id, 1);
+      await controller.reduceStockWithLogic(item.id, 1, type, {
+        price: item.price,
+      });
     }
 
     await refreshProducts();
-    setReduceModal(false);
   };
 
   const handleAction = async (action: ProductAction) => {

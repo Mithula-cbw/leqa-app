@@ -3,7 +3,7 @@ import React from "react";
 import { FlatList, View, StyleSheet } from "react-native";
 import { useStock } from "@/contexts/StockContext";
 import { ProductCard } from "@/components/products";
-import { NoProductsFound, ThemedText } from "@/components/shared";
+import { NoProductsFound } from "@/components/shared";
 
 const ProductsContent = () => {
   const { products } = useStock();

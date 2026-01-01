@@ -1,0 +1,80 @@
+import React from "react";
+import { View, StyleSheet, Pressable } from "react-native";
+import { ThemedText } from "@/components/shared";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { router } from "expo-router";
+
+const NoCustomersFound: React.FC = () => {
+  const sheetBg = useThemeColor({}, "sheet");
+
+  const onAddCustomer = () => {
+    router.push("/add-customer"); // adjust route to your customer form
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: sheetBg }]}>
+      <ThemedText type="subtitle" style={styles.title}>
+        No customers found
+      </ThemedText>
+
+      <ThemedText style={styles.description}>
+        You haven’t added any customers yet. Start by adding your first customer
+        to manage orders and contact info.
+      </ThemedText>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.button,
+          pressed && styles.buttonPressed,
+        ]}
+        onPress={onAddCustomer}
+      >
+        <ThemedText style={styles.buttonText}>
+          Add your first customer
+        </ThemedText>
+      </Pressable>
+    </View>
+  );
+};
+
+export default NoCustomersFound;
+
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    marginTop: 2,
+    paddingTop: 120,
+    paddingBottom: 180,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 24,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    textAlign: "center",
+    opacity: 0.7,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    backgroundColor: "#6f6f6fff",
+  },
+  buttonPressed: {
+    opacity: 0.85,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});

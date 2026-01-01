@@ -21,8 +21,7 @@ import { EditableWeight, ProductOptionsModal } from "@/components/products";
 import { ProductAction } from "@/components/products/ProductCard";
 import { useStock } from "@/contexts/StockContext";
 import { ReduceMode } from "@/components/home/ProductCard";
-import { push } from "expo-router/build/global-state/routing";
-import { formatText } from "@/utils/formatText";
+import { ReductionReason } from "@/types/customer";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -55,17 +54,22 @@ const ProductHero = ({ product }: Props) => {
     router.replace("/products");
   };
 
-  const onReduceConfirm = async () => {
-    if (product.total_stock <= 0) return;
+  const onReduceConfirm = async (type: ReductionReason) => {
+    if (!product.total_stock || Number(product.total_stock) <= 0) return;
+
+    const stockToReduce = Number(product.total_stock);
 
     if (reduceMode === "all") {
-      await controller.reduceStock(product.id, product.total_stock);
+      await controller.reduceStockWithLogic(product.id, stockToReduce, type, {
+        note: `Bulk ${type} of entire stock`,
+      });
     } else {
-      await controller.reduceStock(product.id, 1);
+      await controller.reduceStockWithLogic(product.id, 1, type, {
+        price: product.price,
+      });
     }
 
     await refreshProducts();
-    setReduceModal(false);
   };
 
   const handleAction = async (action: ProductAction) => {
@@ -151,7 +155,11 @@ const ProductHero = ({ product }: Props) => {
         activeOpacity={0.7}
       >
         <BlurView intensity={60} style={styles.blurWrapper} tint="dark">
-          <MaterialCommunityIcons name="image-edit" size={24} color="#ffffffe7" />
+          <MaterialCommunityIcons
+            name="image-edit"
+            size={24}
+            color="#ffffffe7"
+          />
         </BlurView>
       </TouchableOpacity>
 
