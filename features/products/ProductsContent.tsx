@@ -93,7 +93,7 @@ const ProductsContent = () => {
 
 const styles = StyleSheet.create({
   searchContainer: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
     paddingVertical: 10,
     marginBottom: 16,
   },

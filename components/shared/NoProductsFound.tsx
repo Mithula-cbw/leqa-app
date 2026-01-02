@@ -1,18 +1,16 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { ThemedText } from "@/components/shared";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
 
 const NoProductsFound: React.FC = () => {
-  const sheetBg = useThemeColor({}, "sheet");
 
   const onAddProduct = () => {
     router.push("/add-product");
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: sheetBg }]}>
+    <View style={[styles.container]}>
       <ThemedText type="subtitle" style={styles.title}>
         No products found
       </ThemedText>

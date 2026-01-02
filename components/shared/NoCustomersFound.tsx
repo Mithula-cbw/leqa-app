@@ -1,18 +1,16 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { ThemedText } from "@/components/shared";
-import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
 
 const NoCustomersFound: React.FC = () => {
-  const sheetBg = useThemeColor({}, "sheet");
 
   const onAddCustomer = () => {
-    router.push("/add-customer"); // adjust route to your customer form
+    router.push("/add-customer");
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: sheetBg }]}>
+    <View style={[styles.container]}>
       <ThemedText type="subtitle" style={styles.title}>
         No customers found
       </ThemedText>

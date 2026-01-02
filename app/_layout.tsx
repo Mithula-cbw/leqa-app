@@ -12,6 +12,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { ThemeProviderApp, useTheme } from "@/contexts/ThemeContext";
 import { initializeDatabase } from "@/db/schema";
 import { StockProvider } from "@/contexts/StockContext";
+import { TransactionProvider } from "@/contexts/TransactionContext";
 
 function NavigationThemeWrapper({ children }: { children: React.ReactNode }) {
   const { resolvedTheme, loading } = useTheme();
@@ -30,26 +31,28 @@ export default function RootLayout() {
     <SQLiteProvider databaseName="leqa_app.db" onInit={initializeDatabase}>
       <UserProvider>
         <StockProvider>
-          <ThemeProviderApp>
-            <SafeAreaProvider>
-              <NavigationThemeWrapper>
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="add-product"
-                    options={{
-                      presentation: "modal",
-                      headerTitle: "Add Product",
-                      headerShown: true,
-                    }}
-                  />
-                </Stack>
-              </NavigationThemeWrapper>
-            </SafeAreaProvider>
-          </ThemeProviderApp>
+          <TransactionProvider>
+            <ThemeProviderApp>
+              <SafeAreaProvider>
+                <NavigationThemeWrapper>
+                  <Stack>
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="add-product"
+                      options={{
+                        presentation: "modal",
+                        headerTitle: "Add Product",
+                        headerShown: true,
+                      }}
+                    />
+                  </Stack>
+                </NavigationThemeWrapper>
+              </SafeAreaProvider>
+            </ThemeProviderApp>
+          </TransactionProvider>
         </StockProvider>
       </UserProvider>
     </SQLiteProvider>
