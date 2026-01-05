@@ -11,8 +11,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { ThemedText } from "@/components/shared";
 import BottomSheet from "@/components/ui/BottomSheet";
+import { GeneralAnalyticsChart } from "@/components/analytics";
+import { useTransactions } from "@/contexts/TransactionContext";
 
-// Types
 export type AnalyticsSection = "general" | "products" | "customers";
 
 interface TabButtonProps {
@@ -22,9 +23,6 @@ interface TabButtonProps {
   activeColor: string; // Theme-aware primary color
 }
 
-/**
- * Sub-component for individual tab items to keep the main render clean.
- */
 const TabButton = ({
   label,
   isActive,
@@ -43,12 +41,12 @@ const TabButton = ({
 );
 
 export default function AnalyticsScreen() {
-  // State
+  const { transactions } = useTransactions();
   const [activeTab, setActiveTab] = useState<AnalyticsSection>("general");
   const [sheetVisible, setSheetVisible] = useState<boolean>(false);
 
   // Theme & Constants
-  const primaryColor = "#487d55"; // Your brand green
+  const primaryColor = "#487d55";
   const surfaceColor = useThemeColor({}, "background");
 
   // Event Handlers
@@ -68,7 +66,7 @@ export default function AnalyticsScreen() {
   const renderSectionContent = () => {
     switch (activeTab) {
       case "general":
-        return <ThemedText>General Analytics Content</ThemedText>;
+        return <GeneralAnalyticsChart transactions={transactions} />;
       case "products":
         return <ThemedText>Product Performance Content</ThemedText>;
       case "customers":
@@ -177,7 +175,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 10,
     paddingBottom: 120, // Space for FAB
   },
   sheetContent: {

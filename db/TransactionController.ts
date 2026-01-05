@@ -15,13 +15,22 @@ export class TransactionController {
     amount: number,
     category: string,
     description: string | null = null,
-    customerId: number | null = null
+    customerId: number | null = null,
+    createdAt: string | null = null
   ) {
-    return await this.db.runAsync(
-      `INSERT INTO transactions (type, amount, category, description, customer_id) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [type, amount, category, description, customerId]
-    );
+    const query = `
+    INSERT INTO transactions (type, amount, category, description, customer_id, created_at) 
+    VALUES (?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
+  `;
+
+    return await this.db.runAsync(query, [
+      type,
+      amount,
+      category,
+      description,
+      customerId,
+      createdAt,
+    ]);
   }
 
   /**
@@ -40,8 +49,6 @@ export class TransactionController {
 
   /**
    * Delete a transaction.
-   * Note: Because of ON DELETE CASCADE in your schema,
-   * deleting a transaction automatically removes its associated stock_logs.
    */
   async deleteTransaction(id: number) {
     return await this.db.runAsync(`DELETE FROM transactions WHERE id = ?`, [
@@ -50,8 +57,7 @@ export class TransactionController {
   }
 
   /**
-   * Edit specific columns dynamically.
-   * Usage: editTransaction(5, { amount: 1200, category: 'Utilities' })
+   * Edit specific columns dynamically.\
    */
   async editTransaction(id: number, updates: Partial<Transaction>) {
     const keys = Object.keys(updates);
