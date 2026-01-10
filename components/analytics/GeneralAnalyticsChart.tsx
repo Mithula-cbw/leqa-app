@@ -1,329 +1,281 @@
-// Leqa © 2026 Mithula Chanthuka
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { StyleSheet, View, TouchableOpacity, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "@/components/shared";
 import { Transaction } from "@/types/customer";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-
-export type TimeFrame = "1W" | "1M" | "1Y";
-// Added your TransactionType
-export type TransactionType = "sale" | "expense" | "other_income";
+const STORAGE_KEY = "@user_chart_start_date";
 
 interface Props {
   transactions: Transaction[];
 }
 
-const GeneralAnalyticsChart = ({ transactions }: Props) => {
-  // Theme Hooks
+const CumulativeFinancialChart = ({ transactions }: Props) => {
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+
   const bgColor = useThemeColor({}, "background");
   const textColor = useThemeColor({}, "text");
   const textSubColor = useThemeColor({}, "text-subtitle");
   const accent = useThemeColor({}, "accent");
   const salesColor = "#487d55";
-  const otherIncomeColor = "#93C5FD"; // Soft blue for other income
+  const cardBg = "#100d0610";
 
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>("1W");
-  const [referenceDate, setReferenceDate] = useState(dayjs());
+  useEffect(() => {
+    (async () => {
+      const savedDate = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedDate) setStartDate(new Date(savedDate));
+    })();
+  }, []);
 
-  const navigateTime = (direction: "back" | "forward") => {
-    const amount = direction === "back" ? -1 : 1;
-    const unit =
-      timeFrame === "1W" ? "week" : timeFrame === "1M" ? "month" : "year";
-    setReferenceDate((prev) => prev.add(amount, unit as any));
+  const saveDate = async (date: Date) => {
+    setStartDate(date);
+    await AsyncStorage.setItem(STORAGE_KEY, date.toISOString());
+    setDatePickerVisibility(false);
   };
 
-  const chartData = useMemo(() => {
-    return processTransactionData(transactions, timeFrame, referenceDate);
-  }, [transactions, timeFrame, referenceDate]);
+  const clearDate = async () => {
+    setStartDate(null);
+    await AsyncStorage.removeItem(STORAGE_KEY);
+  };
 
-  const formatValue = (val: number) =>
-    val >= 1000 ? `$${(val / 1000).toFixed(1)}k` : `$${val}`;
+  // Logic is now centralized so cards and charts always match the picked date
+  const { chartData, totals } = useMemo(() => {
+    if (!startDate) return { chartData: null, totals: null };
+    return processCumulativeData(transactions, dayjs(startDate));
+  }, [transactions, startDate]);
+
+  if (!startDate) {
+    return (
+      <View style={[styles.emptyContainer, { backgroundColor: bgColor }]}>
+        <ThemedText style={styles.emptyTitle}>Growth Tracking</ThemedText>
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: accent }]}
+          onPress={() => setDatePickerVisibility(true)}
+        >
+          <ThemedText style={{ fontWeight: "bold", color: "#000" }}>
+            Pick a Start Date
+          </ThemedText>
+        </TouchableOpacity>
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={saveDate}
+          onCancel={() => setDatePickerVisibility(false)}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.cardContainer, { backgroundColor: bgColor }]}>
-      {/* Header */}
       <View style={styles.header}>
-        <ThemedText style={[styles.chartTitle, { color: textColor }]}>
-          Financial Trends
-        </ThemedText>
-        <View
-          style={[
-            styles.timeFrameContainer,
-            { backgroundColor: "#100d0622", borderRadius: 8 },
-          ]}
-        >
-          {(["1W", "1M", "1Y"] as TimeFrame[]).map((tf) => (
-            <TouchableOpacity
-              key={tf}
-              onPress={() => {
-                setTimeFrame(tf);
-                setReferenceDate(dayjs());
-              }}
-              style={[
-                styles.timeBtn,
-                timeFrame === tf && { backgroundColor: accent },
-              ]}
-            >
-              <ThemedText
-                style={[
-                  styles.timeText,
-                  timeFrame === tf
-                    ? { color: "#000" }
-                    : { color: textSubColor },
-                ]}
-              >
-                {tf}
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
+        <View>
+          <ThemedText style={[styles.chartTitle, { color: textColor }]}>
+            Performance Grid
+          </ThemedText>
+          <ThemedText style={{ fontSize: 11, color: textSubColor }}>
+            Data since {dayjs(startDate).format("DD MMM YYYY")}
+          </ThemedText>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity style={styles.calBtn} onPress={clearDate}>
+            <Ionicons name="trash-outline" size={18} color="#ef4444" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.calBtn}
+            onPress={() => setDatePickerVisibility(true)}
+          >
+            <Ionicons name="calendar" size={18} color={accent} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Paging Controls */}
-      <View style={styles.pagingRow}>
-        <TouchableOpacity
-          onPress={() => navigateTime("back")}
-          style={styles.arrowBtn}
-        >
-          <Ionicons name="chevron-back" size={18} color={accent} />
-        </TouchableOpacity>
-        <ThemedText style={[styles.dateRangeText, { color: textSubColor }]}>
-          {chartData.rangeLabel}
-        </ThemedText>
-        <TouchableOpacity
-          onPress={() => navigateTime("forward")}
-          style={styles.arrowBtn}
-        >
-          <Ionicons name="chevron-forward" size={18} color={accent} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Chart Section */}
       <View style={styles.chartWrapper}>
         <LineChart
           areaChart
-          curved
-          data={chartData.sales}
-          data2={chartData.expenses}
-          data3={chartData.otherIncome} // Added data3
-          height={180}
-          width={SCREEN_WIDTH - 40}
-          initialSpacing={30}
-          endSpacing={20}
-          spacing={timeFrame === "1M" ? 25 : 50}
-          maxValue={chartData.maxValue * 1.3}
-          thickness={3}
-          hideDataPoints
-          curvature={0.2}
-          curveType={1}
-          // Color 1 (Sales)
+          data={chartData!.sales}
+          data2={chartData!.expenses}
+          height={160}
+          width={SCREEN_WIDTH - 80}
+          curved={false} // Straight lines to prevent diving
+          initialSpacing={10}
+          endSpacing={10}
+          spacing={(SCREEN_WIDTH - 100) / (chartData!.sales.length - 1)}
+          maxValue={chartData!.maxValue * 1.1}
+          hideYAxisText
+          yAxisColor="transparent"
+          xAxisColor={textSubColor + "20"}
+          xAxisLabelTextStyle={{ color: textSubColor, fontSize: 9 }}
+          thickness={2}
           color1={salesColor}
           startFillColor1={salesColor}
-          startOpacity1={0.3}
-          endOpacity1={0.01}
-          // Color 2 (Expenses / Accent)
           color2={accent}
           startFillColor2={accent}
-          startOpacity2={0.2}
-          endOpacity2={0.01}
-          // Color 3 (Other Income)
-          color3={otherIncomeColor}
-          startFillColor3={otherIncomeColor}
-          startOpacity3={0.15}
-          endOpacity3={0.01}
-          // Grid & Axes
-          rulesType="solid"
-          rulesColor="rgba(255,255,255,0.05)"
-          yAxisColor="transparent"
-          xAxisColor="rgba(255,255,255,0.05)"
-          hideYAxisText
-          xAxisLabelTextStyle={[styles.xAxisText, { color: textSubColor }]}
-          pointerConfig={{
-            pointerStripColor: accent + "50",
-            pointerStripWidth: 2,
-            pointerColor: accent,
-            radius: 4,
-            pointerLabelComponent: (items: any) => (
-              <View
-                style={[
-                  styles.tooltipContainer,
-                  { backgroundColor: bgColor, borderColor: accent + "30" },
-                ]}
-              >
-                <ThemedText
-                  style={[styles.tooltipLabel, { color: textSubColor }]}
-                >
-                  {items[0].label}
-                </ThemedText>
-                <ThemedText
-                  style={[styles.tooltipValue, { color: salesColor }]}
-                >
-                  Sales: {formatValue(items[0].value)}
-                </ThemedText>
-                <ThemedText style={[styles.tooltipValue, { color: accent }]}>
-                  Exp: {formatValue(items[1].value)}
-                </ThemedText>
-                <ThemedText
-                  style={[styles.tooltipValue, { color: otherIncomeColor }]}
-                >
-                  Other: {formatValue(items[2].value)}
-                </ThemedText>
-              </View>
-            ),
-          }}
+          startOpacity={0.15}
+          endOpacity={0.01}
         />
       </View>
 
-      {/* Legend */}
-      <View style={styles.legendRow}>
-        <LegendItem label="Sales" color={salesColor} textColor={textSubColor} />
-        <LegendItem label="Expenses" color={accent} textColor={textSubColor} />
-        <LegendItem
-          label="Other"
-          color={otherIncomeColor}
-          textColor={textSubColor}
+      <View style={styles.grid}>
+        <SummaryCard
+          label="Revenue"
+          value={totals!.revenue}
+          color={salesColor}
+          bgColor={cardBg}
+          icon="cash-outline"
+        />
+        <SummaryCard
+          label="Expenses"
+          value={totals!.expenses}
+          color={accent}
+          bgColor={cardBg}
+          icon="cart-outline"
+        />
+        <SummaryCard
+          label="Net Profit"
+          value={totals!.revenue - totals!.expenses}
+          color={textColor}
+          bgColor={cardBg}
+          icon="pie-chart-outline"
+        />
+        <SummaryCard
+          label="Waste/Misc"
+          value={totals!.waste}
+          color="#ef4444"
+          bgColor={cardBg}
+          icon="alert-circle-outline"
         />
       </View>
+
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        onConfirm={saveDate}
+        onCancel={() => setDatePickerVisibility(false)}
+      />
     </View>
   );
 };
 
-// --- Helper Functions ---
-
-function processTransactionData(
-  transactions: Transaction[],
-  timeframe: TimeFrame,
-  refDate: dayjs.Dayjs
-) {
-  let startDate = refDate;
-  let unit: "day" | "month" = "day";
-  let iterations = 7;
-
-  if (timeframe === "1W") {
-    startDate = refDate.startOf("week");
-    iterations = 7;
-  } else if (timeframe === "1M") {
-    startDate = refDate.startOf("month");
-    iterations = refDate.daysInMonth();
-  } else {
-    startDate = refDate.startOf("year");
-    unit = "month";
-    iterations = 12;
-  }
-
-  const groups: any[] = [];
-  let currentMax = 0;
-
-  for (let i = 0; i < iterations; i++) {
-    const current = startDate.add(i, unit);
-    let label = "";
-    if (i === 0 || i === Math.floor(iterations / 2) || i === iterations - 1) {
-      label = current.format(unit === "day" ? "DD MMM" : "MMM");
-    }
-
-    const totals = transactions.reduce(
-      (acc, t) => {
-        if (dayjs(t.created_at).isSame(current, unit)) {
-          // Type casting safety
-          const type = t.type as TransactionType;
-          if (type === "sale") acc.sale += t.amount;
-          else if (type === "expense") acc.expense += t.amount;
-          else if (type === "other_income") acc.other_income += t.amount;
-        }
-        return acc;
-      },
-      { sale: 0, expense: 0, other_income: 0 }
-    );
-
-    currentMax = Math.max(
-      currentMax,
-      totals.sale,
-      totals.expense,
-      totals.other_income
-    );
-    groups.push({ label, ...totals });
-  }
-
-  const rangeLabel =
-    timeframe === "1Y"
-      ? startDate.format("YYYY")
-      : `${startDate.format("MMM D")} - ${startDate
-          .add(iterations - 1, unit)
-          .format("MMM D, YYYY")}`;
-
-  return {
-    rangeLabel,
-    maxValue: currentMax || 100,
-    sales: groups.map((g) => ({ value: g.sale, label: g.label })),
-    expenses: groups.map((g) => ({ value: g.expense })),
-    otherIncome: groups.map((g) => ({ value: g.other_income })),
-  };
-}
-
-const LegendItem = ({ label, color, textColor }: any) => (
-  <View style={styles.legendItem}>
-    <View style={[styles.legendDot, { backgroundColor: color }]} />
-    <ThemedText style={[styles.legendLabel, { color: textColor }]}>
-      {label}
+const SummaryCard = ({ label, value, color, bgColor, icon }: any) => (
+  <View style={[styles.gridItem, { backgroundColor: bgColor }]}>
+    <View style={styles.cardHeader}>
+      <Ionicons name={icon} size={14} color={color} />
+      <ThemedText style={styles.gridLabel}>{label}</ThemedText>
+    </View>
+    <ThemedText style={[styles.gridValue, { color }]}>
+      {value < 0
+        ? `-$${Math.abs(value).toLocaleString()}`
+        : `$${value.toLocaleString()}`}
     </ThemedText>
   </View>
 );
 
+function processCumulativeData(
+  transactions: Transaction[],
+  start: dayjs.Dayjs
+) {
+  const today = dayjs();
+  const diffDays = Math.max(1, today.diff(start, "day"));
+  const intervalCount = 8;
+  const step = Math.max(1, Math.floor(diffDays / intervalCount));
+
+  // Only consider transactions from the picked date onwards
+  const filteredTransactions = transactions.filter(
+    (t) =>
+      dayjs(t.created_at).isAfter(start, "day") ||
+      dayjs(t.created_at).isSame(start, "day")
+  );
+
+  const salesData: any[] = [];
+  const expenseData: any[] = [];
+
+  for (let i = 0; i <= diffDays; i += step) {
+    const currentDate = start.add(i, "day");
+
+    const historyAtPoint = filteredTransactions.filter(
+      (t) =>
+        dayjs(t.created_at).isBefore(currentDate, "day") ||
+        dayjs(t.created_at).isSame(currentDate, "day")
+    );
+
+    const s = historyAtPoint
+      .filter((t) => t.type === "sale")
+      .reduce((acc, t) => acc + t.amount, 0);
+    const e = historyAtPoint
+      .filter((t) => t.type === "expense")
+      .reduce((acc, t) => acc + t.amount, 0);
+
+    salesData.push({
+      value: s,
+      label: i % (step * 2) === 0 ? currentDate.format("DD/MM") : "",
+    });
+    expenseData.push({ value: e });
+  }
+
+  // Calculate final totals from the filtered set
+  const revenue = filteredTransactions
+    .filter((t) => t.type === "sale")
+    .reduce((acc, t) => acc + t.amount, 0);
+  const expenses = filteredTransactions
+    .filter((t) => t.type === "expense")
+    .reduce((acc, t) => acc + t.amount, 0);
+  // Waste is defined as "other_income" that is negative (adjustments/losses)
+  const waste = filteredTransactions
+    .filter((t) => t.type === "other_income" && t.amount < 0)
+    .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+
+  return {
+    chartData: {
+      sales: salesData,
+      expenses: expenseData,
+      maxValue:
+        Math.max(
+          ...salesData.map((d) => d.value),
+          ...expenseData.map((d) => d.value)
+        ) || 100,
+    },
+    totals: { revenue, expenses, waste },
+  };
+}
+
 const styles = StyleSheet.create({
-  cardContainer: {
-    borderRadius: 24,
-    paddingVertical: 20,
-    marginVertical: 0,
-    width: "100%",
-  },
+  cardContainer: { borderRadius: 24, padding: 10 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   chartTitle: { fontSize: 16, fontWeight: "bold" },
-  timeFrameContainer: { flexDirection: "row", borderRadius: 10, padding: 2 },
-  timeBtn: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
-  timeText: { fontSize: 10, fontWeight: "700" },
-  pagingRow: {
+  calBtn: { padding: 8, backgroundColor: "#100d0615", borderRadius: 10 },
+  chartWrapper: { marginLeft: -15, marginBottom: 20 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  gridItem: { width: "48%", padding: 12, borderRadius: 16 },
+  cardHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 15,
+    gap: 6,
+    marginBottom: 4,
   },
-  dateRangeText: { fontSize: 12, fontWeight: "600" },
-  arrowBtn: {
-    padding: 6,
-    backgroundColor: "rgba(25, 17, 9, 0.53)",
-    borderRadius: 100,
-  },
-  chartWrapper: { alignItems: "center", marginLeft: -20 },
-  xAxisText: { fontSize: 9, fontWeight: "600" },
-  legendRow: {
-    flexDirection: "row",
+  gridLabel: { fontSize: 10, opacity: 0.7, fontWeight: "600" },
+  gridValue: { fontSize: 15, fontWeight: "bold" },
+  emptyContainer: {
+    borderRadius: 24,
+    padding: 40,
+    alignItems: "center",
+    minHeight: 200,
     justifyContent: "center",
-    gap: 15,
-    marginTop: 15,
   },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 11 },
-  tooltipContainer: {
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    minWidth: 110,
-  },
-  tooltipLabel: { fontSize: 10, fontWeight: "bold", marginBottom: 2 },
-  tooltipValue: { fontSize: 11, fontWeight: "700" },
+  emptyTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
+  primaryBtn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
 });
 
-export default GeneralAnalyticsChart;
+export default CumulativeFinancialChart;
