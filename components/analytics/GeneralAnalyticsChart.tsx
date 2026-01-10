@@ -1,5 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { StyleSheet, View, TouchableOpacity, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Dimensions,
+  ActivityIndicator,
+} from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import dayjs from "dayjs";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,19 +25,30 @@ interface Props {
 const CumulativeFinancialChart = ({ transactions }: Props) => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Theme Hooks
   const bgColor = useThemeColor({}, "background");
+  const cardBg = useThemeColor({}, "background-seconary");
+  const iconColor = useThemeColor({}, "icon");
   const textColor = useThemeColor({}, "text");
   const textSubColor = useThemeColor({}, "text-subtitle");
   const accent = useThemeColor({}, "accent");
   const salesColor = "#487d55";
-  const cardBg = "#100d0610";
 
+  // --- Persistence Logic ---
   useEffect(() => {
-    (async () => {
-      const savedDate = await AsyncStorage.getItem(STORAGE_KEY);
-      if (savedDate) setStartDate(new Date(savedDate));
-    })();
+    const init = async () => {
+      try {
+        const savedDate = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedDate) setStartDate(new Date(savedDate));
+      } catch (e) {
+        console.error("Storage Error:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const saveDate = async (date: Date) => {
@@ -45,16 +62,30 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
     await AsyncStorage.removeItem(STORAGE_KEY);
   };
 
-  // Logic is now centralized so cards and charts always match the picked date
+  // --- Data Processing ---
   const { chartData, totals } = useMemo(() => {
     if (!startDate) return { chartData: null, totals: null };
     return processCumulativeData(transactions, dayjs(startDate));
   }, [transactions, startDate]);
 
+  // 1. Loading state (prevents button flickering)
+  if (isLoading) {
+    return (
+      <View style={[styles.emptyContainer, { backgroundColor: bgColor }]}>
+        <ActivityIndicator size="small" color={accent} />
+      </View>
+    );
+  }
+
+  // 2. Empty state (No date picked yet)
   if (!startDate) {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: bgColor }]}>
         <ThemedText style={styles.emptyTitle}>Growth Tracking</ThemedText>
+        <ThemedText style={[styles.emptySubtitle, { color: textSubColor }]}>
+          Choose a start date to begin tracking your cumulative financial
+          progress.
+        </ThemedText>
         <TouchableOpacity
           style={[styles.primaryBtn, { backgroundColor: accent }]}
           onPress={() => setDatePickerVisibility(true)}
@@ -73,6 +104,7 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
     );
   }
 
+  // 3. Main Chart & Grid View
   return (
     <View style={[styles.cardContainer, { backgroundColor: bgColor }]}>
       <View style={styles.header}>
@@ -92,7 +124,7 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
             style={styles.calBtn}
             onPress={() => setDatePickerVisibility(true)}
           >
-            <Ionicons name="calendar" size={18} color={accent} />
+            <Ionicons name="calendar" size={18} color={iconColor} />
           </TouchableOpacity>
         </View>
       </View>
@@ -103,8 +135,8 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
           data={chartData!.sales}
           data2={chartData!.expenses}
           height={160}
-          width={SCREEN_WIDTH - 80}
-          curved={false} // Straight lines to prevent diving
+          width={SCREEN_WIDTH - 50}
+          curved={false} // Prevents "diving" lines
           initialSpacing={10}
           endSpacing={10}
           spacing={(SCREEN_WIDTH - 100) / (chartData!.sales.length - 1)}
@@ -113,13 +145,14 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
           yAxisColor="transparent"
           xAxisColor={textSubColor + "20"}
           xAxisLabelTextStyle={{ color: textSubColor, fontSize: 9 }}
-          thickness={2}
+          thickness={2.5}
           color1={salesColor}
           startFillColor1={salesColor}
           color2={accent}
           startFillColor2={accent}
           startOpacity={0.15}
           endOpacity={0.01}
+          hideDataPoints
         />
       </View>
 
@@ -134,7 +167,7 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
         <SummaryCard
           label="Expenses"
           value={totals!.expenses}
-          color={accent}
+          color="#ef4444"
           bgColor={cardBg}
           icon="cart-outline"
         />
@@ -164,6 +197,8 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
   );
 };
 
+// --- Sub-components ---
+
 const SummaryCard = ({ label, value, color, bgColor, icon }: any) => (
   <View style={[styles.gridItem, { backgroundColor: bgColor }]}>
     <View style={styles.cardHeader}>
@@ -178,6 +213,8 @@ const SummaryCard = ({ label, value, color, bgColor, icon }: any) => (
   </View>
 );
 
+// --- Helper Functions ---
+
 function processCumulativeData(
   transactions: Transaction[],
   start: dayjs.Dayjs
@@ -187,8 +224,8 @@ function processCumulativeData(
   const intervalCount = 8;
   const step = Math.max(1, Math.floor(diffDays / intervalCount));
 
-  // Only consider transactions from the picked date onwards
-  const filteredTransactions = transactions.filter(
+  // Filter only transactions within selected range
+  const filtered = transactions.filter(
     (t) =>
       dayjs(t.created_at).isAfter(start, "day") ||
       dayjs(t.created_at).isSame(start, "day")
@@ -199,8 +236,7 @@ function processCumulativeData(
 
   for (let i = 0; i <= diffDays; i += step) {
     const currentDate = start.add(i, "day");
-
-    const historyAtPoint = filteredTransactions.filter(
+    const historyAtPoint = filtered.filter(
       (t) =>
         dayjs(t.created_at).isBefore(currentDate, "day") ||
         dayjs(t.created_at).isSame(currentDate, "day")
@@ -220,15 +256,13 @@ function processCumulativeData(
     expenseData.push({ value: e });
   }
 
-  // Calculate final totals from the filtered set
-  const revenue = filteredTransactions
+  const revenue = filtered
     .filter((t) => t.type === "sale")
     .reduce((acc, t) => acc + t.amount, 0);
-  const expenses = filteredTransactions
+  const expenses = filtered
     .filter((t) => t.type === "expense")
     .reduce((acc, t) => acc + t.amount, 0);
-  // Waste is defined as "other_income" that is negative (adjustments/losses)
-  const waste = filteredTransactions
+  const waste = filtered
     .filter((t) => t.type === "other_income" && t.amount < 0)
     .reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
@@ -247,7 +281,7 @@ function processCumulativeData(
 }
 
 const styles = StyleSheet.create({
-  cardContainer: { borderRadius: 24, padding: 10 },
+  cardContainer: { borderRadius: 24, padding: 12 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -257,8 +291,8 @@ const styles = StyleSheet.create({
   chartTitle: { fontSize: 16, fontWeight: "bold" },
   calBtn: { padding: 8, backgroundColor: "#100d0615", borderRadius: 10 },
   chartWrapper: { marginLeft: -15, marginBottom: 20 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  gridItem: { width: "48%", padding: 12, borderRadius: 16 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  gridItem: { width: "48.5%", padding: 12, borderRadius: 16 },
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -271,10 +305,16 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 40,
     alignItems: "center",
-    minHeight: 200,
+    minHeight: 220,
     justifyContent: "center",
   },
-  emptyTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
+  emptyTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 8 },
+  emptySubtitle: {
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
   primaryBtn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
 });
 
