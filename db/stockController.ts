@@ -1,5 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
+import { ReductionReason } from "@/types/customer";
 import { Product, StockItem } from "@/types/stock";
 import { SQLiteDatabase } from "expo-sqlite";
 
@@ -159,42 +160,55 @@ export const stockController = (db: SQLiteDatabase) => {
     reduceStockWithLogic: async (
       productId: number,
       amount: number,
-      reason: "sale" | "expired" | "waste" | "silent",
+      reason: ReductionReason,
       metadata?: { price?: number; customerId?: number; note?: string }
     ) => {
-      // Physical reduction
-      const success = await internalReduceStock(productId, amount);
-      if (!success) throw new Error("Insufficient stock.");
+      await db.execAsync("BEGIN TRANSACTION");
 
-      let transactionId: number | null = null;
+      try {
+        /* 1️⃣ Physical reduction (FEFO) */
+        const success = await internalReduceStock(productId, amount);
+        if (!success) throw new Error("Insufficient stock.");
 
-      // Record Financials if Sale
-      if (reason === "sale") {
-        const salePrice = metadata?.price || 0;
-        const totalAmount = amount * salePrice;
+        let transactionId: number | null = null;
 
-        const result = await db.runAsync(
-          `INSERT INTO transactions (type, category, amount, customer_id, description) VALUES (?, ?, ?, ?, ?)`,
-          [
-            "sale",
-            "Direct Sale",
-            totalAmount,
-            metadata?.customerId ?? null,
-            metadata?.note ?? `Sold ${amount} units`,
-          ]
-        );
-        transactionId = result.lastInsertRowId;
+        /* 2️⃣ Financial record (only for sales) */
+        if (reason === "sale") {
+          const salePrice = metadata?.price ?? 0;
+          const totalAmount = amount * salePrice;
+
+          const result = await db.runAsync(
+            `INSERT INTO transactions (type, category, amount, customer_id, description)
+         VALUES (?, ?, ?, ?, ?)`,
+            [
+              "sale",
+              "Direct Sale",
+              totalAmount,
+              metadata?.customerId ?? null,
+              metadata?.note ?? `Sold ${amount} units`,
+            ]
+          );
+
+          transactionId = result.lastInsertRowId;
+        }
+
+        /* 3️⃣ Audit log (skip silent) */
+        if (reason !== "silent") {
+          await db.runAsync(
+            `INSERT INTO stock_logs (product_id, quantity, reason, transaction_id)
+         VALUES (?, ?, ?, ?)`,
+            [productId, amount, reason, transactionId]
+          );
+        }
+
+        /* 4️⃣ Commit ALL changes */
+        await db.execAsync("COMMIT");
+        return true;
+      } catch (error) {
+        /* ❌ Roll back EVERYTHING */
+        await db.execAsync("ROLLBACK");
+        throw error;
       }
-
-      // Audit Log
-      if (reason !== "silent") {
-        await db.runAsync(
-          `INSERT INTO stock_logs (product_id, quantity, reason, transaction_id) VALUES (?, ?, ?, ?)`,
-          [productId, amount, reason, transactionId]
-        );
-      }
-
-      return true;
     },
 
     addFinancialRecord: async (

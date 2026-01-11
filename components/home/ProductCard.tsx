@@ -18,13 +18,15 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import ProductSkeleton from "./ProductSkeleton";
 import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
-import { addDuration } from "@/utils/addDuration";
 import { ReductionReason } from "@/types/customer";
+import { useTransactions } from "@/contexts/TransactionContext";
 
 export type ReduceMode = "one" | "all";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const { loading, controller, refreshProducts } = useStock();
+  const {refreshTransactions} = useTransactions();
+  const [processing, setProcessing] = useState(false);
 
   const [reduceModal, setReduceModal] = useState(false);
   const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
@@ -110,6 +112,7 @@ const ProductCard = ({ item }: { item: Product }) => {
         break;
 
       case "empty":
+        if (!item.total_stock || item.total_stock <= 0) return;
         setReduceMode("all");
         setReduceModal(true);
         return;
@@ -123,21 +126,35 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const onReduceConfirm = async (type: ReductionReason) => {
+    if (processing) return;
     if (!item.total_stock || Number(item.total_stock) <= 0) return;
 
-    const stockToReduce = Number(item.total_stock);
+    setProcessing(true);
 
-    if (reduceMode === "all") {
-      await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
-        note: `Bulk ${type} of entire stock`,
-      });
-    } else {
-      await controller.reduceStockWithLogic(item.id, 1, type, {
-        price: item.price,
-      });
+    try {
+      const stockToReduce = Number(item.total_stock);
+
+      if (reduceMode === "all") {
+        await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
+          price: item.price, // ✅ UNIT PRICE ONLY
+          customerId: 1,
+          note: `Bulk ${type} of entire stock`,
+        });
+      } else {
+        await controller.reduceStockWithLogic(item.id, 1, type, {
+          price: item.price, // ✅ UNIT PRICE ONLY
+          customerId: 1,
+        });
+      }
+
+      await refreshProducts();
+      await refreshTransactions();
+      setReduceModal(false);
+    } catch (error) {
+      console.error("Stock reduction failed:", error);
+    } finally {
+      setProcessing(false);
     }
-
-    await refreshProducts();
   };
 
   if (loading) return <ProductSkeleton />;
@@ -219,7 +236,7 @@ const ProductCard = ({ item }: { item: Product }) => {
                 setReduceMode("one");
                 setReduceModal(true);
               }}
-              disabled={item.total_stock <= 0}
+              disabled={item.total_stock <= 0 || processing}
               style={[
                 styles.btn,
                 styles.reduceBtn,
@@ -235,6 +252,7 @@ const ProductCard = ({ item }: { item: Product }) => {
 
             <TouchableOpacity
               onPress={handleIncrease}
+              disabled={processing}
               style={[styles.btn, styles.addBtn]}
             >
               <ThemedText style={styles.btnText}>+</ThemedText>
