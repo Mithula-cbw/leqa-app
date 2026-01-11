@@ -18,11 +18,12 @@ import { ThemedView, ThemedText } from "@/components/shared";
 import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import TimeRangePicker from "@/components/ui/TimePicker";
+import { CURRENCY_SYMBOL } from "@/utils/currency";
 
 export default function AddProductScreen() {
   const { controller, refreshProducts } = useStock();
   const bgSecondary = useThemeColor({}, "background-seconary");
-  const tint =  useThemeColor({}, "background-muted");
+  const tint = useThemeColor({}, "background-muted");
 
   const [form, setForm] = useState({
     title: "",
@@ -193,7 +194,9 @@ export default function AddProductScreen() {
         {/* PRICE & INITIAL STOCK ROW */}
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <ThemedText style={styles.label}>Price (LKR)</ThemedText>
+            <ThemedText
+              style={styles.label}
+            >{`Price ${CURRENCY_SYMBOL}`}</ThemedText>
             <TextInput
               style={[styles.input, { backgroundColor: bgSecondary }]}
               keyboardType="decimal-pad"
@@ -343,7 +346,10 @@ export default function AddProductScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={[styles.saveBtn, {backgroundColor: tint}]} onPress={handleSave}>
+        <TouchableOpacity
+          style={[styles.saveBtn, { backgroundColor: tint }]}
+          onPress={handleSave}
+        >
           <ThemedText style={styles.saveText}>Create Product</ThemedText>
         </TouchableOpacity>
       </ScrollView>

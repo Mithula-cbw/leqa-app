@@ -20,12 +20,13 @@ import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
 import { ReductionReason } from "@/types/customer";
 import { useTransactions } from "@/contexts/TransactionContext";
+import { formatPrice } from "@/utils/currency";
 
 export type ReduceMode = "one" | "all";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const { loading, controller, refreshProducts } = useStock();
-  const {refreshTransactions} = useTransactions();
+  const { refreshTransactions } = useTransactions();
   const [processing, setProcessing] = useState(false);
 
   const [reduceModal, setReduceModal] = useState(false);
@@ -214,9 +215,13 @@ const ProductCard = ({ item }: { item: Product }) => {
                 )}
               </View>
 
-              <ThemedText style={styles.subText}>{`${item.weight_value} ${
-                item.weight_unit ?? "g"
-              }`}</ThemedText>
+              <ThemedText style={styles.weightText}>
+                {`${item.weight_value} ${item.weight_unit ?? "g"}`}
+              </ThemedText>
+
+              <ThemedText style={styles.subText}>
+                {formatPrice(item.price)}
+              </ThemedText>
             </View>
 
             {/* OPTIONS */}
@@ -326,6 +331,7 @@ const styles = StyleSheet.create({
   },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   subText: { fontSize: 16, opacity: 0.9, color: "#19a139ff" },
+  weightText: { fontSize: 14, opacity: 0.7 },
   dot: { marginHorizontal: 4, opacity: 0.3 },
   rightSection: {
     flex: 1,
