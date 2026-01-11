@@ -20,7 +20,7 @@ interface Props {
   expiryDate: Date | null;
   warnDate: Date | null;
   onUpdateWarn: (date: Date | null) => void;
-  onUpdateExpiry: (date: Date | null) => void;
+  onUpdateExpiry?: (date: Date | null) => void;
   onUpdateQty: (qty: number) => void;
   onRemove: () => void;
 }
@@ -61,7 +61,7 @@ const AddedProductItem = ({
 
   const onPickerChange = (_: any, selected?: Date) => {
     if (Platform.OS === "android") setShowPicker(false);
-    if (selected) onUpdateExpiry(selected);
+    if (selected && onUpdateExpiry) onUpdateExpiry(selected);
   };
 
   const getWarnValue = () => {

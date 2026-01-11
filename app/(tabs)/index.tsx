@@ -9,20 +9,17 @@ import {
   HomeHeader,
   HomeHero,
   ProductSection,
+  RemoveStockSheet,
 } from "@/features/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useStock } from "@/contexts/StockContext";
 import BottomSheet from "@/components/ui/BottomSheet";
-// import InventoryTestScreen from "@/features/test/InventoryTestScreen";
 
 export default function Index() {
   const bgSecondary = useThemeColor({}, "background-seconary");
   const { products, loading } = useStock();
-  const [sheetVisible, setSheetVisible] = useState(false);
-
-  const onAdd = () => {
-    setSheetVisible(true);
-  };
+  const [addVisible, setAddVisible] = useState(false);
+  const [removeVisible, setRemoveVisible] = useState(false);
 
   return (
     <ThemedView style={styles.container}>
@@ -41,16 +38,25 @@ export default function Index() {
       </ScrollView>
 
       <FloatingActionButtons
-        onAdd={onAdd}
-        onRemove={() => console.log("Remove/Reduce Stock")}
+        onAdd={() => setAddVisible(true)}
+        onRemove={() => setRemoveVisible(true)}
       />
       <BottomSheet
         sheetTitle="Update Stock"
-        visible={sheetVisible}
-        onClose={() => setSheetVisible(false)}
+        visible={addVisible}
+        onClose={() => setAddVisible(false)}
         animationDuration={400}
       >
-        <AddStockSheet onFinish={() => setSheetVisible(false)} />
+        <AddStockSheet onFinish={() => setAddVisible(false)} />
+      </BottomSheet>
+
+      <BottomSheet
+        sheetTitle="Process Sale"
+        visible={removeVisible}
+        onClose={() => setRemoveVisible(false)}
+        animationDuration={400}
+      >
+        <RemoveStockSheet onFinish={() => setRemoveVisible(false)} />
       </BottomSheet>
     </ThemedView>
   );
@@ -62,7 +68,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    
   },
   content: {
     marginTop: 25,

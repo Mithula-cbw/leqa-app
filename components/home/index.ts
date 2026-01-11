@@ -7,3 +7,5 @@ export { default as HeroCardOne } from "./HeroCardOne";
 export { default as HeroCardTwo } from "./HeroCardTwo";
 export { default as ProductCard } from "./ProductCard";
 export { default as ProductSkeleton } from "./ProductSkeleton";
+export { default as QuickCustomerChip } from "./QuickCustomerChip";
+export { default as RemovedProductItem } from "./RemovedProductItem";

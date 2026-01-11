@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   gridLabel: { fontSize: 10, opacity: 0.7, fontWeight: "600" },
-  gridValue: { fontSize: 15, fontWeight: "bold" },
+  gridValue: { fontSize: 20, marginLeft: 2, fontWeight: "bold" },
   emptyContainer: {
     borderRadius: 24,
     padding: 40,

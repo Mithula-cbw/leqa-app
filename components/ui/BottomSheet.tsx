@@ -14,7 +14,7 @@ import {
   ToastAndroid,
   Platform,
 } from "react-native";
-import { ThemedView } from "../shared";
+import { ThemedText, ThemedView } from "../shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -145,7 +145,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         {/* Custom Tooltip for non-android/UI consistency */}
         {showTooltip && (
           <Animated.View style={[styles.tooltip, { opacity: tooltipOpacity }]}>
-            <Text style={styles.tooltipText}>Press back again to exit</Text>
+            <ThemedText style={styles.tooltipText}>Press back again to exit</ThemedText>
           </Animated.View>
         )}
 
@@ -174,12 +174,12 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                   {(sheetTitle || sheetSubtitle) && (
                     <ThemedView style={styles.headerTextWrapper}>
                       {sheetTitle && (
-                        <Text style={styles.sheetTitle}>{sheetTitle}</Text>
+                        <ThemedText style={styles.sheetTitle}>{sheetTitle}</ThemedText>
                       )}
                       {sheetSubtitle && (
-                        <Text style={styles.sheetSubtitle}>
+                        <ThemedText style={styles.sheetSubtitle}>
                           {sheetSubtitle}
-                        </Text>
+                        </ThemedText>
                       )}
                     </ThemedView>
                   )}
@@ -188,7 +188,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
                       style={[styles.closeButton, closeButtonStyle]}
                       onPress={onClose}
                     >
-                      <Text style={[styles.closeText, closeTextStyle]}>×</Text>
+                      <ThemedText style={[styles.closeText, closeTextStyle]}>×</ThemedText>
                     </TouchableOpacity>
                   )}
                 </ThemedView>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
   },
   tooltip: {
     position: "absolute",
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     width: "100%",
-    paddingHorizontal: 5,
+    paddingHorizontal: 0,
   },
   sheet: {
     borderTopRightRadius: 20,
@@ -243,8 +243,9 @@ const styles = StyleSheet.create({
     maxHeight: SCREEN_HEIGHT * 0.9,
   },
   sheetHeader: {
-    marginBottom: 0,
-    padding:5
+    marginBottom: 10,
+    padding:5,
+    paddingTop: 25
   },
   headerContent: {
     flexDirection: "row",

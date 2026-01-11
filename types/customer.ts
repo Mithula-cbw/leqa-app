@@ -18,7 +18,6 @@ export type TransactionType = 'sale' | 'expense' | 'other_income';
 export interface Transaction {
   id: number;
   type: TransactionType;
-  category: string; // e.g., 'Rent', 'Direct Sale', 'Marketing'
   amount: number;
   description: string | null;
   customer_id: number | null; // Linked if type is 'sale'

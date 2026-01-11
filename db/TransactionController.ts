@@ -13,20 +13,18 @@ export class TransactionController {
   async createTransaction(
     type: "sale" | "expense" | "other_income",
     amount: number,
-    category: string,
     description: string | null = null,
     customerId: number | null = null,
     createdAt: string | null = null
   ) {
     const query = `
-    INSERT INTO transactions (type, amount, category, description, customer_id, created_at) 
-    VALUES (?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
+    INSERT INTO transactions (type, amount, description, customer_id, created_at) 
+    VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP))
   `;
 
     return await this.db.runAsync(query, [
       type,
       amount,
-      category,
       description,
       customerId,
       createdAt,
