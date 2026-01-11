@@ -17,9 +17,11 @@ import {
 } from "@/components/home";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
+import { useTransactions } from "@/contexts/TransactionContext";
 
 const RemoveStockSheet = ({ onFinish }: { onFinish: () => void }) => {
   const { products, customers, controller, refreshProducts } = useStock();
+  const { refreshTransactions } = useTransactions();
   const [search, setSearch] = useState("");
   const [stagedItems, setStagedItems] = useState<
     { product: Product; quantity: number }[]
@@ -76,6 +78,7 @@ const RemoveStockSheet = ({ onFinish }: { onFinish: () => void }) => {
         );
       }
       await refreshProducts();
+      await refreshTransactions();
       toastRef.current?.show("Sale processed successfully");
       setTimeout(onFinish, 500);
     } catch (error: any) {
