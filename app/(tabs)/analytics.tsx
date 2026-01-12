@@ -15,6 +15,8 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import { GeneralAnalyticsChart } from "@/components/analytics";
 import { useTransactions } from "@/contexts/TransactionContext";
 import TransactionForm from "@/features/analytics/TransactionForm";
+import { StockImpactChart } from "@/features/analytics";
+import { useStock } from "@/contexts/StockContext";
 
 export type AnalyticsSection = "general" | "products" | "customers";
 
@@ -47,7 +49,9 @@ const TabButton = ({
 
 export default function AnalyticsScreen() {
   // Pulling controller and refresh function from context
-  const { transactions, controller, refreshTransactions } = useTransactions();
+  const { transactions, stockLogs, controller, refreshTransactions } =
+    useTransactions();
+  const { products } = useStock();
 
   const [activeTab, setActiveTab] = useState<AnalyticsSection>("general");
   const [sheetVisible, setSheetVisible] = useState<boolean>(false);
@@ -62,10 +66,6 @@ export default function AnalyticsScreen() {
   const handleOpenSheet = () => setSheetVisible(true);
   const handleCloseSheet = () => setSheetVisible(false);
 
-  /**
-   * Database Handler
-   * Saves the transaction to SQLite and refreshes the global state
-   */
   const handleSaveTransaction = async (data: any) => {
     try {
       await controller.createTransaction(
@@ -91,9 +91,11 @@ export default function AnalyticsScreen() {
         return <GeneralAnalyticsChart transactions={transactions} />;
       case "products":
         return (
-          <ThemedText style={styles.placeholder}>
-            Product Performance Content
-          </ThemedText>
+          <StockImpactChart
+            logs={stockLogs}
+            transactions={transactions}
+            products={products}
+          />
         );
       case "customers":
         return (
