@@ -14,6 +14,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { StockLog, ReductionReason, Transaction } from "@/types/customer";
 import { Product } from "@/types/stock";
 import { Ionicons } from "@expo/vector-icons";
+import { CURRENCY_SYMBOL } from "@/utils/currency";
 
 dayjs.extend(isBetween);
 
@@ -23,19 +24,17 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 interface Props {
   logs: StockLog[];
   transactions: Transaction[];
-  products: Product[]; // Passed to map IDs to Titles/Images
+  products: Product[];
 }
 
 const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
   const [mode, setMode] = useState<ViewMode>("month");
   const [refDate, setRefDate] = useState(dayjs());
 
-  // Theme Hooks
   const bgColor = useThemeColor({}, "background");
   const cardBg = useThemeColor({}, "background-seconary");
   const textSub = useThemeColor({}, "text-subtitle");
   const iconColor = useThemeColor({}, "icon");
-  const textColor = useThemeColor({}, "text");
   const gridColor = "#100d0615";
 
   const colors = {
@@ -44,33 +43,27 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
     waste: "#f59e0b",
   };
 
-  // --- Navigation ---
   const navigate = (direction: "next" | "prev") => {
     setRefDate((prev) =>
       direction === "next" ? prev.add(1, mode) : prev.subtract(1, mode)
     );
   };
 
-  // --- Filtered Data for current window ---
   const currentWindowData = useMemo(() => {
     const start = refDate.startOf(mode);
     const end = refDate.endOf(mode);
-
     const filteredLogs = logs.filter((l) =>
       dayjs(l.created_at).isBetween(start, end, null, "[]")
     );
     const filteredTx = transactions.filter((t) =>
       dayjs(t.created_at).isBetween(start, end, null, "[]")
     );
-
     return { filteredLogs, filteredTx };
   }, [logs, transactions, refDate, mode]);
 
-  // --- Insights Calculations ---
   const insights = useMemo(() => {
     const { filteredLogs, filteredTx } = currentWindowData;
 
-    // 1. Top Product Logic
     const counts: Record<number, number> = {};
     filteredLogs
       .filter((l) => l.reason === "sale")
@@ -78,13 +71,24 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
         counts[l.product_id] = (counts[l.product_id] || 0) + l.quantity;
       });
 
-    const topId = Object.keys(counts).reduce(
-      (a, b) => (counts[Number(a)] > counts[Number(b)] ? a : b),
-      "0"
+    const sortedProductIds = Object.keys(counts).sort(
+      (a, b) => counts[Number(b)] - counts[Number(a)]
     );
+
+    const topId = sortedProductIds[0] || "0";
     const topProductMeta = products.find((p) => p.id === Number(topId));
 
-    // 2. Units, Waste, and Peak Date
+    // Calculate other products sold (excluding the top one)
+    const otherProducts = sortedProductIds.slice(1).map((id) => {
+      const product = products.find((p) => p.id === Number(id));
+      const qty = counts[Number(id)];
+      return {
+        ...product,
+        qty,
+        totalRevenue: qty * (product?.price || 0),
+      };
+    });
+
     const unitsSold = filteredLogs
       .filter((l) => l.reason === "sale")
       .reduce((s, c) => s + c.quantity, 0);
@@ -107,13 +111,14 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
     return {
       topProduct: topProductMeta || null,
       topQty: counts[Number(topId)] || 0,
+      topRevenue: (counts[Number(topId)] || 0) * (topProductMeta?.price || 0),
+      otherProducts,
       unitsSold,
       wasteCount,
       peakDate: peakD ? dayjs(peakD).format("DD MMM") : "N/A",
     };
   }, [currentWindowData, products]);
 
-  // --- Chart Processing ---
   const chartData = useMemo(() => {
     let intervals: { label: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] =
       [];
@@ -179,7 +184,6 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <ThemedText type="defaultSemiBold">Stock Analytics</ThemedText>
@@ -205,7 +209,6 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
         </View>
       </View>
 
-      {/* CHART */}
       <View style={styles.chartBox}>
         <BarChart
           stackData={chartData}
@@ -225,7 +228,6 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
         />
       </View>
 
-      {/* FOOTER CONTROLS */}
       <View style={styles.footer}>
         <TouchableOpacity
           onPress={() => navigate("prev")}
@@ -249,7 +251,6 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
         </TouchableOpacity>
       </View>
 
-      {/* INSIGHTS GRID */}
       <View style={styles.insightsGrid}>
         {/* ROW 1: TOP PRODUCT */}
         <View style={[styles.topProductCard, { backgroundColor: cardBg }]}>
@@ -265,8 +266,8 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
           </View>
           <View style={styles.topInfo}>
             <View style={styles.toprow}>
-                <Ionicons name="star" size={10} color="#f59e0b" />
-                <ThemedText style={[styles.iLabel]}>TOP PRODUCT</ThemedText>
+              <Ionicons name="star" size={10} color="#f59e0b" />
+              <ThemedText style={[styles.iLabel]}>TOP PRODUCT</ThemedText>
             </View>
             <ThemedText style={styles.productName} numberOfLines={1}>
               {insights.topProduct?.title || "No Sales Data"}
@@ -274,11 +275,13 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
           </View>
           <View style={styles.topStats}>
             <ThemedText style={styles.soldQty}>{insights.topQty}</ThemedText>
-            <ThemedText style={styles.iLabel}>UNITS SOLD</ThemedText>
+            <ThemedText style={styles.iLabel}>
+              {CURRENCY_SYMBOL} {insights.topRevenue.toLocaleString()}
+            </ThemedText>
           </View>
         </View>
 
-        {/* ROW 2: STATS */}
+        {/* ROW 2: SUMMARY STATS */}
         <View style={styles.statsRow}>
           <InsightCard
             label="Total Sold"
@@ -302,12 +305,53 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
             bg={cardBg}
           />
         </View>
+
+        {/* NEW SECTION: OTHER PRODUCTS SOLD */}
+        <View style={styles.otherSection}>
+          <ThemedText style={styles.sectionTitle}>
+            Other Selling Products
+          </ThemedText>
+          {insights.otherProducts.length > 0 ? (
+            insights.otherProducts.map((prod, index) => (
+              <View
+                key={index}
+                style={[styles.otherProductCard, { backgroundColor: cardBg }]}
+              >
+                <View style={styles.otherAvatarContainer}>
+                  {prod.image ? (
+                    <Image source={{ uri: prod.image }} style={styles.avatar} />
+                  ) : (
+                    <Ionicons name="cube-outline" size={20} color={iconColor} />
+                  )}
+                </View>
+                <View style={styles.topInfo}>
+                  <ThemedText style={styles.otherProductName} numberOfLines={1}>
+                    {prod.title}
+                  </ThemedText>
+                  <ThemedText style={styles.iLabel}>
+                    {prod.qty} Units Sold
+                  </ThemedText>
+                </View>
+                <View style={styles.topStats}>
+                  <ThemedText style={styles.otherPriceText}>
+                    {CURRENCY_SYMBOL} {prod.totalRevenue?.toLocaleString()}
+                  </ThemedText>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyText}>
+                No other products were sold
+              </ThemedText>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
 };
 
-// Sub-component for small cards
 const InsightCard = ({ label, value, icon, color, bg }: any) => (
   <View style={[styles.iCard, { backgroundColor: bg }]}>
     <View style={styles.iHeader}>
@@ -365,15 +409,15 @@ const styles = StyleSheet.create({
   topProductCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: 12,
     paddingVertical: 16,
     borderRadius: 12,
     gap: 15,
   },
   avatarContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 15,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     backgroundColor: "#f59e0b15",
     justifyContent: "center",
     alignItems: "center",
@@ -382,23 +426,18 @@ const styles = StyleSheet.create({
   avatar: { width: "100%", height: "100%" },
   topInfo: { flex: 1 },
   productName: { fontSize: 17, fontWeight: "bold" },
-  topStats: { alignItems: "flex-end", paddingHorizontal: 16 },
+  topStats: { alignItems: "flex-end" },
   soldQty: { fontSize: 20, fontWeight: "bold", color: "#487d55" },
 
   statsRow: { flexDirection: "row", gap: 10 },
-  iCard: {
-    flex: 1,
-    paddingTop: 4,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-  },
+  iCard: { flex: 1, paddingTop: 4, paddingHorizontal: 14, borderRadius: 12 },
   iHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     marginBottom: 6,
   },
-  toprow:{
+  toprow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
@@ -411,6 +450,36 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   iValue: { fontSize: 16, fontWeight: "bold", marginBottom: 12 },
+
+  // Other Products Section
+  otherSection: { marginTop: 10, gap: 8, paddingBottom: 120 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    opacity: 0.8,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  otherProductCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  otherAvatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "#00000005",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  otherProductName: { fontSize: 14, fontWeight: "600" },
+  otherPriceText: { fontSize: 14, fontWeight: "bold", opacity: 0.8 },
+  emptyContainer: { padding: 20, alignItems: "center", opacity: 0.5 },
+  emptyText: { fontSize: 12, fontStyle: "italic" },
 });
 
 export default EnhancedStockDashboard;
