@@ -14,6 +14,7 @@ import { useStock } from "@/contexts/StockContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import TimeRangePicker, { TimePickerValue } from "@/components/ui/TimePicker";
 import { formatDuration } from "@/utils/formatText";
+import { CURRENCY_SYMBOL } from "@/utils/currency";
 
 const ProductInfoSection = ({
   product,
@@ -175,6 +176,21 @@ const ProductInfoSection = ({
   return (
     <View style={styles.container}>
       {/* DESCRIPTION */}
+      <View style={[styles.section, styles.priceRow]}>
+        <View style={[styles.priceInputContainer]}>
+          <ThemedText style={styles.currencySymbol}>
+            {CURRENCY_SYMBOL}
+          </ThemedText>
+          <EditableField
+            value={`${product.price}.00` || 0}
+            onSave={async (val) => {
+              await controller.updateProductField(product.id, "price", val);
+              await refreshProducts();
+            }}
+            textStyle={styles.priceValue}
+          />
+        </View>
+      </View>
       <View style={styles.section}>
         <ThemedText style={styles.label}>Description</ThemedText>
         <EditableField
@@ -198,7 +214,10 @@ const ProductInfoSection = ({
 
         <TouchableOpacity
           onPress={onStock}
-          style={[styles.secondaryBtn, { backgroundColor: bgSecondary, borderColor: bgPrimary }]}
+          style={[
+            styles.secondaryBtn,
+            { backgroundColor: bgSecondary, borderColor: bgPrimary },
+          ]}
         >
           <Ionicons name="add" size={22} color={bgPrimary} />
           <ThemedText style={[styles.secondaryText, { color: bgPrimary }]}>
@@ -379,6 +398,26 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 20,
     gap: 20,
+  },
+  priceRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  priceInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  currencySymbol: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#19a139ff",
+  },
+  priceValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#19a139ff",
   },
   modalTitle: { fontSize: 17, fontWeight: "700", textAlign: "center" },
   saveBtn: {
