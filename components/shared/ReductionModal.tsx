@@ -12,17 +12,17 @@ import { ThemedText, ThemedView } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { formatText } from "@/utils/formatText";
-import { Product } from "@/types/stock";
 import { ReduceMode } from "../home/ProductCard";
+import { Product } from "@/types/stock";
+import { ReductionReason } from "@/types/customer";
 
-type ReductionType = "sell" | "waste" | "delete";
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
 interface ReductionOptionsModalProps {
   isVisible: boolean;
   onClose: () => void;
   product: Product;
-  onConfirm: (type: ReductionType) => void;
+  onConfirm: (type: ReductionReason) => void; // Updated to ReductionReason
   reduceMode: ReduceMode;
 }
 
@@ -37,6 +37,7 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
   const iconMuted = useThemeColor({}, "icon");
 
   const isAll = reduceMode === "all";
+  const totalStock = Number(product.total_stock || 0);
 
   const Option = ({
     icon,
@@ -48,16 +49,17 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
   }: {
     icon: IoniconName;
     label: string;
-    type: ReductionType;
+    type: ReductionReason; // Updated to ReductionReason
     color?: string;
     isLast?: boolean;
     disabled?: boolean;
   }) => (
     <TouchableOpacity
       activeOpacity={0.7}
-      disabled={disabled}
+      disabled={disabled || totalStock <= 0}
       style={[
         styles.option,
+        (disabled || totalStock <= 0) && { opacity: 0.4 },
         !isLast && {
           borderBottomColor: divider,
           borderBottomWidth: StyleSheet.hairlineWidth,
@@ -111,12 +113,13 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
             <View style={styles.warningBox}>
               <Ionicons
                 name="warning-outline"
-                size={40}
+                size={32}
                 color="#f1cd29de"
-                style={{ marginRight: 8 }}
+                style={{ marginRight: 12 }}
               />
               <ThemedText style={styles.warningText}>
-                This will remove all stock for this product.
+                This will remove all stock ({totalStock} units) for this
+                product.
               </ThemedText>
             </View>
           )}
@@ -124,27 +127,33 @@ const ReductionOptionsModal: React.FC<ReductionOptionsModalProps> = ({
           {/* Options */}
           <Option
             icon="cash-outline"
-            label={isAll ? `Sold items [${product.total_stock}]` : "Sold item"}
-            type="sell"
+            label={isAll ? `Sold all items [${totalStock}]` : "Sold item"}
+            type="sale"
             color="#269141ff"
-            disabled={product.total_stock <= 0}
+          />
+
+          <Option
+            icon="alert-circle-outline"
+            label={isAll ? `Expired [${totalStock}]` : "Mark as Expired"}
+            type="expired"
+            color="#d32f2fff"
           />
 
           <Option
             icon="trash-bin-outline"
-            label={isAll ? `Waste / expired [${product.total_stock}]` : "Waste / expired"}
+            label={isAll ? `General Waste [${totalStock}]` : "Mark as Waste"}
             type="waste"
             color="#bf7e23ff"
-            disabled={product.total_stock <= 0}
           />
 
           <Option
             icon="remove-circle-outline"
-            label={isAll ? `Silent remove (no log) [${product.total_stock}]` : "Silent remove (no log)"}
-            type="delete"
+            label={
+              isAll ? `Silent remove [${totalStock}]` : "Silent remove (no log)"
+            }
+            type="silent"
             color={iconMuted}
             isLast
-            disabled={product.total_stock <= 0}
           />
         </ThemedView>
       </Pressable>
@@ -157,69 +166,65 @@ export default ReductionOptionsModal;
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 45,
+    padding: 30,
   },
-
   content: {
     width: "100%",
-    borderRadius: 20,
+    borderRadius: 24,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
     elevation: 20,
   },
-
   warningBox: {
     flexDirection: "row",
     alignItems: "center",
     borderLeftWidth: 4,
     borderLeftColor: "#f1cd29de",
-    backgroundColor: "rgba(168, 156, 25, 0.14)",
-    padding: 10,
-    marginBottom: 10,
+    backgroundColor: "rgba(241, 205, 41, 0.08)",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
-
   warningText: {
-    fontSize: 12,
-    color: "#998e8dff",
+    fontSize: 13,
+    color: "#666",
     flex: 1,
-    lineHeight:16
+    lineHeight: 18,
   },
-
   header: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8,
+    alignItems: "center",
+    marginBottom: 12,
   },
-
   title: {
-    fontSize: 17,
+    fontSize: 18,
   },
-
   subtitle: {
-    fontSize: 11,
+    fontSize: 10,
     opacity: 0.5,
     marginTop: 2,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
-
   option: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
-
   optionIcon: {
-    width: 22,
+    width: 24,
     marginRight: 14,
     textAlign: "center",
   },
-
   optionText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "500",
   },
 });

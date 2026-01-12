@@ -3,21 +3,21 @@ import { View, StyleSheet, Pressable } from "react-native";
 import { ThemedText } from "@/components/shared";
 import { router } from "expo-router";
 
-const NoProductsFound: React.FC = () => {
+const NoCustomersFound: React.FC = () => {
 
-  const onAddProduct = () => {
-    router.push("/add-product");
+  const onAddCustomer = () => {
+    router.push("/add-customer");
   };
 
   return (
     <View style={[styles.container]}>
       <ThemedText type="subtitle" style={styles.title}>
-        No products found
+        No customers found
       </ThemedText>
 
       <ThemedText style={styles.description}>
-        You haven’t added any products yet. Start by adding your first product
-        to manage stock and sales.
+        You haven’t added any customers yet. Start by adding your first customer
+        to manage orders and contact info.
       </ThemedText>
 
       <Pressable
@@ -25,17 +25,17 @@ const NoProductsFound: React.FC = () => {
           styles.button,
           pressed && styles.buttonPressed,
         ]}
-        onPress={onAddProduct}
+        onPress={onAddCustomer}
       >
         <ThemedText style={styles.buttonText}>
-          Add your first product
+          Add your first customer
         </ThemedText>
       </Pressable>
     </View>
   );
 };
 
-export default NoProductsFound;
+export default NoCustomersFound;
 
 const styles = StyleSheet.create({
   container: {

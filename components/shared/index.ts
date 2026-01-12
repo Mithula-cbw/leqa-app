@@ -6,6 +6,7 @@ export { default as EditableField } from "./EditableField";
 export { default as NewUserAppearanceCard } from "./NewUserAppearanceCard";
 export { default as NewUserNameCard } from "./NewUserNameCard";
 export { default as NewUserThemeButton } from "./NewUserThemeButton";
+export { default as NoCustomersFound } from "./NoCustomersFound";
 export { default as NoProductsFound } from "./NoProductsFound";
 export { default as ProfileImagePicker } from "./ProfileImagePicker";
 export { default as ReductionModal } from "./ReductionModal";

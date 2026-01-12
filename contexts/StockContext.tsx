@@ -10,11 +10,14 @@ import React, {
 import { useSQLiteContext } from "expo-sqlite";
 import { stockController } from "@/db/stockController";
 import { Product, StockItem } from "@/types/stock";
+import { Customer } from "@/types/customer";
 
 interface StockContextType {
   products: Product[];
+  customers: Customer[];
   batches: StockItem[];
   refreshProducts: () => Promise<void>;
+  refreshCustomers: () => Promise<void>;
   loading: boolean;
   controller: ReturnType<typeof stockController>;
 }
@@ -29,17 +32,32 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({
   const controller = useMemo(() => stockController(db), [db]);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [batches, setBatches] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const refreshCustomers = async () => {
+    try {
+      const [customerData] = await Promise.all([controller.getAllCustomers()]);
+
+      setCustomers(customerData);
+    } catch (err) {
+      console.error("Failed to fetch Customer data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshProducts = async () => {
     try {
-      const [productData, batchData] = await Promise.all([
+      const [productData, customerData, batchData] = await Promise.all([
         controller.getAllProducts(),
+        controller.getAllCustomers(),
         controller.getAllBatches(),
       ]);
 
       setProducts(productData);
+      setCustomers(customerData);
       setBatches(batchData);
     } catch (err) {
       console.error("Failed to fetch stock data", err);
@@ -50,14 +68,17 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     refreshProducts();
+    refreshCustomers();
   }, []);
 
   return (
     <StockContext.Provider
       value={{
         products,
+        customers,
         batches,
         refreshProducts,
+        refreshCustomers,
         loading,
         controller,
       }}

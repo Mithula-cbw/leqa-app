@@ -1,5 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
+import { ReductionReason } from "@/types/customer";
 import { Product, StockItem } from "@/types/stock";
 import { SQLiteDatabase } from "expo-sqlite";
 
@@ -11,6 +12,38 @@ const fromDbDate = (value: string | null): Date | null =>
   value ? new Date(value) : null;
 
 export const stockController = (db: SQLiteDatabase) => {
+  /**
+   * Internal FEFO Logic (First Expired, First Out)
+   * Used by both the simple reduce and the logic-heavy reduce.
+   */
+  const internalReduceStock = async (
+    productId: number,
+    amountToReduce: number
+  ) => {
+    const batches = await db.getAllAsync<any>(
+      `SELECT id, quantity FROM stock_items WHERE product_id = ? ORDER BY expiry_at ASC`,
+      [productId]
+    );
+
+    let remaining = amountToReduce;
+
+    for (const batch of batches) {
+      if (remaining <= 0) break;
+
+      if (batch.quantity <= remaining) {
+        remaining -= batch.quantity;
+        await db.runAsync(`DELETE FROM stock_items WHERE id = ?`, [batch.id]);
+      } else {
+        await db.runAsync(
+          `UPDATE stock_items SET quantity = quantity - ? WHERE id = ?`,
+          [remaining, batch.id]
+        );
+        remaining = 0;
+      }
+    }
+    return remaining === 0;
+  };
+
   return {
     // =========================
     // Create Product (Blueprint)
@@ -32,44 +65,16 @@ export const stockController = (db: SQLiteDatabase) => {
       warningPeriodDays = 0,
       warningPeriodHours = 0
     ) => {
-      console.log(doExpire, doWarn);
       const existing = await db.getFirstAsync<{ id: number }>(
-        `
-        SELECT id
-        FROM products
-        WHERE LOWER(TRIM(title)) = LOWER(TRIM(?))
-          AND weight_value = ?
-          AND weight_unit = ?
-          AND price = ?
-        `,
+        `SELECT id FROM products WHERE LOWER(TRIM(title)) = LOWER(TRIM(?)) AND weight_value = ? AND weight_unit = ? AND price = ?`,
         [title, weight_value, weight_unit, price]
       );
 
-      if (existing) {
-        throw new Error(`Product "${title}" already exists.`);
-      }
+      if (existing) throw new Error(`Product "${title}" already exists.`);
 
       return await db.runAsync(
-        `
-        INSERT INTO products (
-          title,
-          description,
-          weight_value,
-          weight_unit,
-          image,
-          price,
-          do_expire,
-          shelf_life_years,
-          shelf_life_months,
-          shelf_life_days,
-          shelf_life_hours,
-          do_warn,
-          warning_period_months,
-          warning_period_days,
-          warning_period_hours
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+        `INSERT INTO products (title, description, weight_value, weight_unit, image, price, do_expire, shelf_life_years, shelf_life_months, shelf_life_days, shelf_life_hours, do_warn, warning_period_months, warning_period_days, warning_period_hours)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           title,
           description,
@@ -90,202 +95,6 @@ export const stockController = (db: SQLiteDatabase) => {
       );
     },
 
-    // Add Stock Batch
-    addStockBatch: async (
-      productId: number,
-      quantity: number,
-      expiryAt: Date | null,
-      warnAt: Date | null,
-      customBatchNumber?: number
-    ) => {
-      let batchNumber = customBatchNumber;
-
-      if (!batchNumber) {
-        const result = await db.getFirstAsync<{ maxBatch: number }>(
-          `SELECT MAX(batch_number) as maxBatch FROM stock_items WHERE product_id = ?`,
-          [productId]
-        );
-        batchNumber = (result?.maxBatch || 0) + 1;
-      }
-
-      return await db.runAsync(
-        `
-        INSERT INTO stock_items (
-          product_id,
-          batch_number,
-          quantity,
-          expiry_at,
-          warn_at
-        )
-        VALUES (?, ?, ?, ?, ?)
-        `,
-        [productId, batchNumber, quantity, toDbDate(expiryAt), toDbDate(warnAt)]
-      );
-    },
-
-    // =========================
-    // Products + Total Stock
-    // =========================
-    getAllProducts: async (): Promise<Product[]> => {
-      return await db.getAllAsync<Product>(
-        `
-        SELECT
-          p.*,
-          COALESCE(SUM(s.quantity), 0) AS total_stock
-        FROM products p
-        LEFT JOIN stock_items s ON p.id = s.product_id
-        GROUP BY p.id
-        ORDER BY
-          p.is_pinned DESC,
-          total_stock DESC,
-          p.title ASC
-        `
-      );
-    },
-
-    // =========================
-    // Batches for One Product
-    // =========================
-    getProductBatches: async (productId: number): Promise<StockItem[]> => {
-      const rows = await db.getAllAsync<any>(
-        `
-        SELECT *
-        FROM stock_items
-        WHERE product_id = ?
-        ORDER BY expiry_at ASC
-        `,
-        [productId]
-      );
-
-      return rows.map((row) => ({
-        id: row.id,
-        product_id: row.product_id,
-        batch_number: row.batch_number,
-        quantity: row.quantity,
-        expiry_at: fromDbDate(row.expiry_at),
-        warn_at: fromDbDate(row.warn_at),
-        created_at: new Date(row.created_at),
-      }));
-    },
-
-    // =========================
-    // Update Product Field
-    // =========================
-    updateProductField: async (
-      productId: number,
-      field: string,
-      value: any
-    ) => {
-      const allowedFields = [
-        "title",
-        "description",
-        "weight_value",
-        "weight_unit",
-        "price",
-        "image",
-        "do_expire",
-        "shelf_life_years",
-        "shelf_life_months",
-        "shelf_life_days",
-        "shelf_life_hours",
-        "do_warn",
-        "warning_period_months",
-        "warning_period_days",
-        "warning_period_hours",
-        "sort_order",
-      ];
-
-      if (!allowedFields.includes(field)) {
-        throw new Error("Invalid field update");
-      }
-
-      return await db.runAsync(
-        `UPDATE products SET ${field} = ? WHERE id = ?`,
-        [value, productId]
-      );
-    },
-
-    // Update Product Fields
-    updateProductFields: async (
-      productId: number,
-      updates: Record<string, any>
-    ) => {
-      const fields = Object.keys(updates);
-      const values = Object.values(updates);
-
-      // Build the SET part of the query: "field1 = ?, field2 = ?"
-      const setClause = fields.map((f) => `${f} = ?`).join(", ");
-
-      return await db.runAsync(
-        `UPDATE products SET ${setClause} WHERE id = ?`,
-        [...values, productId]
-      );
-    },
-
-    // =========================
-    // Reduce Stock (FEFO)
-    // =========================
-    reduceStock: async (productId: number, amountToReduce: number) => {
-      const batches = await db.getAllAsync<any>(
-        `
-        SELECT id, quantity
-        FROM stock_items
-        WHERE product_id = ?
-        ORDER BY expiry_at ASC
-        `,
-        [productId]
-      );
-
-      let remaining = amountToReduce;
-
-      for (const batch of batches) {
-        if (remaining <= 0) break;
-
-        if (batch.quantity <= remaining) {
-          remaining -= batch.quantity;
-          await db.runAsync(`DELETE FROM stock_items WHERE id = ?`, [batch.id]);
-        } else {
-          await db.runAsync(
-            `
-            UPDATE stock_items
-            SET quantity = quantity - ?
-            WHERE id = ?
-            `,
-            [remaining, batch.id]
-          );
-          remaining = 0;
-        }
-      }
-
-      return remaining === 0;
-    },
-
-    // =========================
-    // Delete Product
-    // =========================
-    deleteProduct: async (productId: number) => {
-      return await db.runAsync(`DELETE FROM products WHERE id = ?`, [
-        productId,
-      ]);
-    },
-
-    // =========================
-    // Pin / Unpin
-    // =========================
-    togglePin: async (productId: number, isPinned: boolean) => {
-      return await db.runAsync(
-        `
-        UPDATE products
-        SET is_pinned = ?
-        WHERE id = ?
-        `,
-        [isPinned ? 1 : 0, productId]
-      );
-    },
-
-    // =========================
-    // All Batches (Context)
-    // =========================
     getAllBatches: async (): Promise<StockItem[]> => {
       const rows = await db.getAllAsync<any>(
         `SELECT * FROM stock_items ORDER BY created_at DESC`
@@ -303,43 +112,244 @@ export const stockController = (db: SQLiteDatabase) => {
     },
 
     // =========================
-    // Delete Batch
+    // Stock Management
     // =========================
-    deleteBatch: async (batchId: number) => {
-      return await db.runAsync(`DELETE FROM stock_items WHERE id = ?`, [
-        batchId,
-      ]);
+    addStockBatch: async (
+      productId: number,
+      quantity: number,
+      expiryAt: Date | null,
+      warnAt: Date | null,
+      customBatchNumber?: number
+    ) => {
+      let batchNumber = customBatchNumber;
+      if (!batchNumber) {
+        const result = await db.getFirstAsync<{ maxBatch: number }>(
+          `SELECT MAX(batch_number) as maxBatch FROM stock_items WHERE product_id = ?`,
+          [productId]
+        );
+        batchNumber = (result?.maxBatch || 0) + 1;
+      }
+      return await db.runAsync(
+        `INSERT INTO stock_items (product_id, batch_number, quantity, expiry_at, warn_at) VALUES (?, ?, ?, ?, ?)`,
+        [productId, batchNumber, quantity, toDbDate(expiryAt), toDbDate(warnAt)]
+      );
     },
 
-    // ===========================================
-    // Update All Batches for a Specific Product
-    // ===========================================
-    updateAllBatchesForProduct: async (
+    getAllProducts: async (): Promise<Product[]> => {
+      return await db.getAllAsync<Product>(
+        `SELECT p.*, COALESCE(SUM(s.quantity), 0) AS total_stock FROM products p LEFT JOIN stock_items s ON p.id = s.product_id GROUP BY p.id ORDER BY p.is_pinned DESC, total_stock DESC, p.title ASC`
+      );
+    },
+
+    getProductBatches: async (productId: number): Promise<StockItem[]> => {
+      const rows = await db.getAllAsync<any>(
+        `SELECT * FROM stock_items WHERE product_id = ? ORDER BY expiry_at ASC`,
+        [productId]
+      );
+      return rows.map((row) => ({
+        ...row,
+        expiry_at: fromDbDate(row.expiry_at),
+        warn_at: fromDbDate(row.warn_at),
+        created_at: new Date(row.created_at),
+      }));
+    },
+
+    // =========================
+    // Selling & Reducing Logic
+    // =========================
+    reduceStockWithLogic: async (
+      productId: number,
+      amount: number,
+      reason: ReductionReason,
+      metadata?: { price?: number; customerId?: number; note?: string }
+    ) => {
+      await db.execAsync("BEGIN TRANSACTION");
+
+      try {
+        /* 1️⃣ Physical reduction (FEFO) */
+        const success = await internalReduceStock(productId, amount);
+        if (!success) throw new Error("Insufficient stock.");
+
+        let transactionId: number | null = null;
+
+        /* 2️⃣ Financial record (only for sales) */
+        if (reason === "sale") {
+          const salePrice = metadata?.price ?? 0;
+          const totalAmount = amount * salePrice;
+
+          const result = await db.runAsync(
+            `INSERT INTO transactions (type, category, amount, customer_id, description)
+         VALUES (?, ?, ?, ?, ?)`,
+            [
+              "sale",
+              "Direct Sale",
+              totalAmount,
+              metadata?.customerId ?? null,
+              metadata?.note ?? `Sold ${amount} units`,
+            ]
+          );
+
+          transactionId = result.lastInsertRowId;
+        }
+
+        /* 3️⃣ Audit log (skip silent) */
+        if (reason !== "silent") {
+          await db.runAsync(
+            `INSERT INTO stock_logs (product_id, quantity, reason, transaction_id)
+         VALUES (?, ?, ?, ?)`,
+            [productId, amount, reason, transactionId]
+          );
+        }
+
+        /* 4️⃣ Commit ALL changes */
+        await db.execAsync("COMMIT");
+        return true;
+      } catch (error) {
+        /* ❌ Roll back EVERYTHING */
+        await db.execAsync("ROLLBACK");
+        throw error;
+      }
+    },
+
+    addFinancialRecord: async (
+      type: "expense" | "other_income",
+      amount: number,
+      category: string,
+      description: string
+    ) => {
+      return await db.runAsync(
+        `INSERT INTO transactions (type, amount, category, description) VALUES (?, ?, ?, ?)`,
+        [type, amount, category, description]
+      );
+    },
+
+    // =========================
+    // Field Updates
+    // =========================
+    updateProductField: async (
+      productId: number,
+      field: string,
+      value: any
+    ) => {
+      return await db.runAsync(
+        `UPDATE products SET ${field} = ? WHERE id = ?`,
+        [value, productId]
+      );
+    },
+
+    updateProductFields: async (
       productId: number,
       updates: Record<string, any>
     ) => {
       const fields = Object.keys(updates);
-      const values = Object.values(updates);
+      const setClause = fields.map((f) => `${f} = ?`).join(", ");
+      return await db.runAsync(
+        `UPDATE products SET ${setClause} WHERE id = ?`,
+        [...Object.values(updates), productId]
+      );
+    },
 
-      // Prevent updating sensitive relational fields like product_id
-      const restricted = ["id", "product_id"];
-      const filteredFields = fields.filter((f) => !restricted.includes(f));
-      
-      if (filteredFields.length === 0) return;
-
-      // Map values to DB format (handling Dates)
-      const dbValues = filteredFields.map(f => {
-        const val = updates[f];
-        return val instanceof Date ? toDbDate(val) : val;
-      });
-
-      // Build: "field1 = ?, field2 = ?"
-      const setClause = filteredFields.map((f) => `${f} = ?`).join(", ");
-
+    updateAllBatchesForProduct: async (
+      productId: number,
+      updates: Record<string, any>
+    ) => {
+      const fields = Object.keys(updates).filter(
+        (f) => f !== "id" && f !== "product_id"
+      );
+      if (fields.length === 0) return;
+      const dbValues = fields.map((f) =>
+        updates[f] instanceof Date ? toDbDate(updates[f]) : updates[f]
+      );
+      const setClause = fields.map((f) => `${f} = ?`).join(", ");
       return await db.runAsync(
         `UPDATE stock_items SET ${setClause} WHERE product_id = ?`,
         [...dbValues, productId]
       );
     },
+
+    // =========================
+    // Customer Management
+    // =========================
+
+    createCustomer: async (
+      name: string,
+      image: string | null,
+      phone: string | null,
+      email: string | null
+    ) => {
+      return await db.runAsync(
+        `INSERT INTO customers (name, image, phone, email) VALUES (?, ?, ?, ?)`,
+        [name, image, phone, email]
+      );
+    },
+
+    getAllCustomers: async () => {
+      return await db.getAllAsync<any>(
+        `SELECT * FROM customers 
+     ORDER BY is_pinned DESC, name ASC`
+      );
+    },
+
+    // =========================
+    // Customer Specific Updates
+    // =========================
+    updateCustomerField: async (
+      customerId: number,
+      field: string,
+      value: any
+    ) => {
+      const allowedFields = ["name", "image", "phone", "email", "is_pinned"];
+      if (!allowedFields.includes(field)) {
+        throw new Error(`Field ${field} is not editable.`);
+      }
+
+      return await db.runAsync(
+        `UPDATE customers SET ${field} = ? WHERE id = ?`,
+        [value, customerId]
+      );
+    },
+
+    /**
+     * Updates multiple fields at once
+     * Usage: updateCustomerFields(1, { name: 'John', email: 'john@me.com' })
+     */
+    updateCustomerFields: async (
+      customerId: number,
+      updates: Record<string, any>
+    ) => {
+      const fields = Object.keys(updates);
+      const setClause = fields.map((f) => `${f} = ?`).join(", ");
+      const values = Object.values(updates);
+
+      return await db.runAsync(
+        `UPDATE customers SET ${setClause} WHERE id = ?`,
+        [...values, customerId]
+      );
+    },
+
+    toggleCustomerPin: async (id: number, pin: boolean) =>
+      await db.runAsync(`UPDATE customers SET is_pinned = ? WHERE id = ?`, [
+        pin ? 1 : 0,
+        id,
+      ]),
+
+    deleteCustomer: async (id: number) => {
+      // Warning: You might want to check if they have transactions first
+      // or set transaction customer_id to NULL on delete.
+      return await db.runAsync(`DELETE FROM customers WHERE id = ?`, [id]);
+    },
+
+    // =========================
+    // Deletions
+    // =========================
+    deleteProduct: async (id: number) =>
+      await db.runAsync(`DELETE FROM products WHERE id = ?`, [id]),
+    deleteBatch: async (id: number) =>
+      await db.runAsync(`DELETE FROM stock_items WHERE id = ?`, [id]),
+    togglePin: async (id: number, pin: boolean) =>
+      await db.runAsync(`UPDATE products SET is_pinned = ? WHERE id = ?`, [
+        pin ? 1 : 0,
+        id,
+      ]),
   };
 };

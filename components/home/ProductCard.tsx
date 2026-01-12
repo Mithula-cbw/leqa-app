@@ -18,12 +18,16 @@ import { AntDesign, Ionicons } from "@expo/vector-icons";
 import ProductSkeleton from "./ProductSkeleton";
 import { ProductAction } from "../products/ProductCard";
 import ProductOptionsModal from "../products/ProductOptionsModal";
-import { addDuration } from "@/utils/addDuration";
+import { ReductionReason } from "@/types/customer";
+import { useTransactions } from "@/contexts/TransactionContext";
+import { formatPrice } from "@/utils/currency";
 
 export type ReduceMode = "one" | "all";
 
 const ProductCard = ({ item }: { item: Product }) => {
   const { loading, controller, refreshProducts } = useStock();
+  const { refreshTransactions } = useTransactions();
+  const [processing, setProcessing] = useState(false);
 
   const [reduceModal, setReduceModal] = useState(false);
   const [reduceMode, setReduceMode] = useState<ReduceMode>("one");
@@ -48,8 +52,8 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const handleIncrease = async () => {
-    console.log("do shelf_life_days", item.shelf_life_years) // dev-log
-    console.log("do warn", item.do_warn) // dev-log
+    console.log("do shelf_life_days", item.shelf_life_years); // dev-log
+    console.log("do warn", item.do_warn); // dev-log
 
     // Check if expiration logic is active for this specific product
     const isExpireActive = item.do_expire === 1;
@@ -109,6 +113,7 @@ const ProductCard = ({ item }: { item: Product }) => {
         break;
 
       case "empty":
+        if (!item.total_stock || item.total_stock <= 0) return;
         setReduceMode("all");
         setReduceModal(true);
         return;
@@ -119,19 +124,39 @@ const ProductCard = ({ item }: { item: Product }) => {
     }
 
     await refreshProducts();
+    await refreshTransactions();
   };
 
-  const onReduceConfirm = async () => {
-    if (item.total_stock <= 0) return;
+  const onReduceConfirm = async (type: ReductionReason) => {
+    if (processing) return;
+    if (!item.total_stock || Number(item.total_stock) <= 0) return;
 
-    if (reduceMode === "all") {
-      await controller.reduceStock(item.id, item.total_stock);
-    } else {
-      await controller.reduceStock(item.id, 1);
+    setProcessing(true);
+
+    try {
+      const stockToReduce = Number(item.total_stock);
+
+      if (reduceMode === "all") {
+        await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
+          price: item.price, 
+          customerId: 1,
+          note: `Bulk ${type} of entire stock`,
+        });
+      } else {
+        await controller.reduceStockWithLogic(item.id, 1, type, {
+          price: item.price, 
+          customerId: 1,
+        });
+      }
+
+      await refreshProducts();
+      await refreshTransactions();
+      setReduceModal(false);
+    } catch (error) {
+      console.error("Stock reduction failed:", error);
+    } finally {
+      setProcessing(false);
     }
-
-    await refreshProducts();
-    setReduceModal(false);
   };
 
   if (loading) return <ProductSkeleton />;
@@ -191,9 +216,13 @@ const ProductCard = ({ item }: { item: Product }) => {
                 )}
               </View>
 
-              <ThemedText style={styles.subText}>{`${item.weight_value} ${
-                item.weight_unit ?? "g"
-              }`}</ThemedText>
+              <ThemedText style={styles.weightText}>
+                {`${item.weight_value} ${item.weight_unit ?? "g"}`}
+              </ThemedText>
+
+              <ThemedText style={styles.subText}>
+                {formatPrice(item.price)}
+              </ThemedText>
             </View>
 
             {/* OPTIONS */}
@@ -213,7 +242,7 @@ const ProductCard = ({ item }: { item: Product }) => {
                 setReduceMode("one");
                 setReduceModal(true);
               }}
-              disabled={item.total_stock <= 0}
+              disabled={item.total_stock <= 0 || processing}
               style={[
                 styles.btn,
                 styles.reduceBtn,
@@ -229,6 +258,7 @@ const ProductCard = ({ item }: { item: Product }) => {
 
             <TouchableOpacity
               onPress={handleIncrease}
+              disabled={processing}
               style={[styles.btn, styles.addBtn]}
             >
               <ThemedText style={styles.btnText}>+</ThemedText>
@@ -302,6 +332,7 @@ const styles = StyleSheet.create({
   },
   detailsRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   subText: { fontSize: 16, opacity: 0.9, color: "#19a139ff" },
+  weightText: { fontSize: 14, opacity: 0.7 },
   dot: { marginHorizontal: 4, opacity: 0.3 },
   rightSection: {
     flex: 1,

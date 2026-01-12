@@ -24,7 +24,7 @@ const Products = () => {
     if (activeTab === "products") {
       router.push("/add-product");
     } else {
-      console.log('/add cutomer)');
+      router.push("/add-customer");
     }
   };
 
