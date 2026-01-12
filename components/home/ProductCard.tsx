@@ -124,6 +124,7 @@ const ProductCard = ({ item }: { item: Product }) => {
     }
 
     await refreshProducts();
+    await refreshTransactions();
   };
 
   const onReduceConfirm = async (type: ReductionReason) => {
@@ -137,13 +138,13 @@ const ProductCard = ({ item }: { item: Product }) => {
 
       if (reduceMode === "all") {
         await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
-          price: item.price, // ✅ UNIT PRICE ONLY
+          price: item.price, 
           customerId: 1,
           note: `Bulk ${type} of entire stock`,
         });
       } else {
         await controller.reduceStockWithLogic(item.id, 1, type, {
-          price: item.price, // ✅ UNIT PRICE ONLY
+          price: item.price, 
           customerId: 1,
         });
       }

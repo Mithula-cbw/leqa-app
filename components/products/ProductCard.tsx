@@ -1,8 +1,7 @@
-// components/products/ProductCard.tsx
 // Leqa © 2025 Mithula Chanthuka
 
 import React, { useState } from "react";
-import { View, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
+import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
@@ -15,6 +14,7 @@ import ProductOptionsModal from "./ProductOptionsModal";
 import ProductCardSkeleton from "./ProductSkeleton";
 import { ReduceMode } from "../home/ProductCard";
 import { ReductionReason } from "@/types/customer";
+import { useTransactions } from "@/contexts/TransactionContext";
 
 export type ProductAction = "view" | "edit" | "pin" | "empty" | "delete";
 
@@ -25,6 +25,9 @@ const ProductCard = ({ item }: { item: Product }) => {
   const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
 
   const { loading, controller, refreshProducts } = useStock();
+  const { refreshTransactions } = useTransactions();
+
+  const [processing, setProcessing] = useState(false);
 
   const cardBg = useThemeColor({}, "sheet");
   const shadow = useThemeColor({}, "text");
@@ -44,21 +47,35 @@ const ProductCard = ({ item }: { item: Product }) => {
   };
 
   const onReduceConfirm = async (type: ReductionReason) => {
+    if (processing) return; // Prevent double submissions
     if (!item.total_stock || Number(item.total_stock) <= 0) return;
 
-    const stockToReduce = Number(item.total_stock);
+    setProcessing(true);
 
-    if (reduceMode === "all") {
-      await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
-        note: `Bulk ${type} of entire stock`,
-      });
-    } else {
-      await controller.reduceStockWithLogic(item.id, 1, type, {
-        price: item.price,
-      });
+    try {
+      const stockToReduce = Number(item.total_stock);
+
+      if (reduceMode === "all") {
+        await controller.reduceStockWithLogic(item.id, stockToReduce, type, {
+          price: item.price, 
+          customerId: 1,
+          note: `Bulk ${type} of entire stock`,
+        });
+      } else {
+        await controller.reduceStockWithLogic(item.id, 1, type, {
+          price: item.price,
+          customerId: 1, 
+        });
+      }
+
+      await refreshProducts();
+      await refreshTransactions();
+      setReduceModal(false);
+    } catch (error) {
+      console.error("Stock reduction failed:", error);
+    } finally {
+      setProcessing(false);
     }
-
-    await refreshProducts();
   };
 
   const handleAction = async (action: ProductAction) => {
@@ -86,6 +103,7 @@ const ProductCard = ({ item }: { item: Product }) => {
     }
 
     await refreshProducts();
+    await refreshTransactions();
   };
 
   if (loading) return <ProductCardSkeleton />;
