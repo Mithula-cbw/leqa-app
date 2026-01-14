@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { ReductionReason } from "@/types/customer";
+import { Customer, ReductionReason } from "@/types/customer";
 import { Product, StockItem } from "@/types/stock";
 import { SQLiteDatabase } from "expo-sqlite";
 
@@ -335,6 +335,13 @@ export const stockController = (db: SQLiteDatabase) => {
       return await db.runAsync(
         `UPDATE customers SET ${setClause} WHERE id = ?`,
         [...values, customerId]
+      );
+    },
+
+    getCustomerById: async (id: number): Promise<Customer | null> => {
+      return await db.getFirstAsync<Customer>(
+        `SELECT * FROM customers WHERE id = ?`,
+        [id]
       );
     },
 

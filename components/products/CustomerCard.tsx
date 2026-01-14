@@ -1,8 +1,13 @@
-// components/customers/CustomerCard.tsx
 // Leqa © 2025 Mithula Chanthuka
 
 import React, { useState } from "react";
-import { View, StyleSheet, Image, TouchableOpacity, ToastAndroid } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ToastAndroid,
+} from "react-native";
 import {
   AntDesign,
   Ionicons,
@@ -30,6 +35,10 @@ const CustomerCard = ({ item }: { item: Customer }) => {
   const shadow = useThemeColor({}, "text");
   const bgSecondary = useThemeColor({}, "background-seconary");
 
+  const goToCustomer = () => {
+    router.push(`/(tabs)/products/customer/${item.id}`);
+  };
+
   const confirmDelete = async () => {
     await controller.deleteCustomer(item.id);
     await refreshCustomers();
@@ -40,20 +49,25 @@ const CustomerCard = ({ item }: { item: Customer }) => {
   const handleAction = async (action: CustomerAction) => {
     switch (action) {
       case "view":
-        // router.push(`/customers/${item.id}`);
-        break;
+        goToCustomer();
+        return;
+
       case "pin":
         await controller.toggleCustomerPin(item.id, item.is_pinned === 0);
-        break;
+        await refreshCustomers?.();
+        return;
+
       case "delete":
-        if (item.id === 1 ) {
-          ToastAndroid.show("Can't Delete the default Customer", ToastAndroid.SHORT);
+        if (item.id === 1) {
+          ToastAndroid.show(
+            "Can't Delete the default Customer",
+            ToastAndroid.SHORT
+          );
           return;
         }
         setDeleteAlertVisible(true);
         return;
     }
-    await refreshCustomers?.();
   };
 
   if (loading) return <CustomerCardSkeleton />;
@@ -62,7 +76,7 @@ const CustomerCard = ({ item }: { item: Customer }) => {
     <>
       <TouchableOpacity
         activeOpacity={0.7}
-        onPress={() => handleAction("view")}
+        onPress={goToCustomer}
         style={[styles.card, { shadowColor: shadow, backgroundColor: cardBg }]}
       >
         {/* Avatar Section */}
@@ -194,26 +208,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  name: {
-    fontSize: 15,
-  },
-  pinIcon: {
-    opacity: 0.7,
-  },
+  name: { fontSize: 15 },
+  pinIcon: { opacity: 0.7 },
   phoneRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     marginTop: 2,
   },
-  phoneText: {
-    fontSize: 13,
-    opacity: 0.5,
-  },
-  moreButton: {
-    padding: 8,
-    marginLeft: 4,
-  },
+  phoneText: { fontSize: 13, opacity: 0.5 },
+  moreButton: { padding: 8, marginLeft: 4 },
 });
 
 export default CustomerCard;
