@@ -14,6 +14,7 @@ import { ThemedText } from "@/components/shared";
 import { Transaction } from "@/types/customer";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { useIsFocused } from "@react-navigation/native"; // ✅ added
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const STORAGE_KEY = "@user_chart_start_date";
@@ -23,6 +24,8 @@ interface Props {
 }
 
 const CumulativeFinancialChart = ({ transactions }: Props) => {
+  const isFocused = useIsFocused(); // ✅ added
+
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,20 +39,27 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
   const accent = useThemeColor({}, "accent");
   const salesColor = "#487d55";
 
-  // --- Persistence Logic ---
+  // --- Persistence Logic (reload on focus so it stays fresh) ---
   useEffect(() => {
+    let alive = true;
+
     const init = async () => {
       try {
         const savedDate = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!alive) return;
         if (savedDate) setStartDate(new Date(savedDate));
       } catch (e) {
         console.error("Storage Error:", e);
       } finally {
-        setIsLoading(false);
+        if (alive) setIsLoading(false);
       }
     };
+
     init();
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [isFocused]); // ✅ was []
 
   const saveDate = async (date: Date) => {
     setStartDate(date);
@@ -62,10 +72,18 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
     await AsyncStorage.removeItem(STORAGE_KEY);
   };
 
-  // --- Data Processing ---
+  // --- Data Processing (recomputes when transactions update) ---
   const { chartData, totals } = useMemo(() => {
     if (!startDate) return { chartData: null, totals: null };
     return processCumulativeData(transactions, dayjs(startDate));
+  }, [transactions, startDate]); // ✅ already correct
+
+  // ✅ GiftedCharts sometimes caches; force remount when tx updates
+  const chartKey = useMemo(() => {
+    const last = transactions?.[transactions.length - 1]?.created_at ?? "none";
+    return `${startDate?.toISOString() ?? "no-date"}-${
+      transactions.length
+    }-${last}`;
   }, [transactions, startDate]);
 
   // 1. Loading state (prevents button flickering)
@@ -86,14 +104,17 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
           Choose a start date to begin tracking your cumulative financial
           progress.
         </ThemedText>
+
         <TouchableOpacity
           style={[styles.primaryBtn, { backgroundColor: accent }]}
           onPress={() => setDatePickerVisibility(true)}
+          activeOpacity={0.9}
         >
           <ThemedText style={{ fontWeight: "bold", color: "#000" }}>
             Pick a Start Date
           </ThemedText>
         </TouchableOpacity>
+
         <DateTimePickerModal
           isVisible={isDatePickerVisible}
           mode="date"
@@ -116,13 +137,20 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
             Data since {dayjs(startDate).format("DD MMM YYYY")}
           </ThemedText>
         </View>
+
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity style={styles.calBtn} onPress={clearDate}>
+          <TouchableOpacity
+            style={styles.calBtn}
+            onPress={clearDate}
+            activeOpacity={0.85}
+          >
             <Ionicons name="trash-outline" size={18} color="#ef4444" />
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.calBtn}
             onPress={() => setDatePickerVisibility(true)}
+            activeOpacity={0.85}
           >
             <Ionicons name="calendar" size={18} color={iconColor} />
           </TouchableOpacity>
@@ -131,12 +159,13 @@ const CumulativeFinancialChart = ({ transactions }: Props) => {
 
       <View style={styles.chartWrapper}>
         <LineChart
+          key={chartKey} // ✅ important: remount when tx changes
           areaChart
           data={chartData!.sales}
           data2={chartData!.expenses}
           height={160}
           width={SCREEN_WIDTH - 50}
-          curved={false} // Prevents "diving" lines
+          curved={false}
           initialSpacing={10}
           endSpacing={10}
           spacing={(SCREEN_WIDTH - 100) / (chartData!.sales.length - 1)}
@@ -224,27 +253,26 @@ function processCumulativeData(
   const intervalCount = 8;
   const step = Math.max(1, Math.floor(diffDays / intervalCount));
 
-  // Filter only transactions within selected range
-  const filtered = transactions.filter(
-    (t) =>
-      dayjs(t.created_at).isAfter(start, "day") ||
-      dayjs(t.created_at).isSame(start, "day")
-  );
+  const filtered = transactions.filter((t) => {
+    const d = dayjs(t.created_at);
+    return d.isAfter(start, "day") || d.isSame(start, "day");
+  });
 
   const salesData: any[] = [];
   const expenseData: any[] = [];
 
   for (let i = 0; i <= diffDays; i += step) {
     const currentDate = start.add(i, "day");
-    const historyAtPoint = filtered.filter(
-      (t) =>
-        dayjs(t.created_at).isBefore(currentDate, "day") ||
-        dayjs(t.created_at).isSame(currentDate, "day")
-    );
+
+    const historyAtPoint = filtered.filter((t) => {
+      const d = dayjs(t.created_at);
+      return d.isBefore(currentDate, "day") || d.isSame(currentDate, "day");
+    });
 
     const s = historyAtPoint
       .filter((t) => t.type === "sale")
       .reduce((acc, t) => acc + t.amount, 0);
+
     const e = historyAtPoint
       .filter((t) => t.type === "expense")
       .reduce((acc, t) => acc + t.amount, 0);
@@ -259,22 +287,26 @@ function processCumulativeData(
   const revenue = filtered
     .filter((t) => t.type === "sale")
     .reduce((acc, t) => acc + t.amount, 0);
+
   const expenses = filtered
     .filter((t) => t.type === "expense")
     .reduce((acc, t) => acc + t.amount, 0);
+
   const waste = filtered
     .filter((t) => t.type === "other_income" && t.amount < 0)
     .reduce((acc, t) => acc + Math.abs(t.amount), 0);
+
+  const maxValue =
+    Math.max(
+      ...salesData.map((d) => d.value),
+      ...expenseData.map((d) => d.value)
+    ) || 100;
 
   return {
     chartData: {
       sales: salesData,
       expenses: expenseData,
-      maxValue:
-        Math.max(
-          ...salesData.map((d) => d.value),
-          ...expenseData.map((d) => d.value)
-        ) || 100,
+      maxValue,
     },
     totals: { revenue, expenses, waste },
   };

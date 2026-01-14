@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,12 +9,12 @@ import {
 import { BarChart } from "react-native-gifted-charts";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
+import { Ionicons } from "@expo/vector-icons";
+
 import { ThemedText } from "@/components/shared";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { StockLog, ReductionReason, Transaction } from "@/types/customer";
-import { Product } from "@/types/stock";
-import { Ionicons } from "@expo/vector-icons";
 import { CURRENCY_SYMBOL } from "@/utils/currency";
+import type { Customer, Transaction } from "@/types/customer";
 
 dayjs.extend(isBetween);
 
@@ -22,12 +22,21 @@ type ViewMode = "year" | "month" | "week";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 interface Props {
-  logs: StockLog[];
+  customers: Customer[];
   transactions: Transaction[];
-  products: Product[];
 }
 
-const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
+type CustomerRow = {
+  id: number;
+  name: string;
+  image?: string | null;
+  is_pinned: 0 | 1;
+  total: number;
+  saleCount: number;
+  lastSaleAt: string | null;
+};
+
+const EnhancedCustomerDashboard = ({ customers, transactions }: Props) => {
   const [mode, setMode] = useState<ViewMode>("week");
   const [refDate, setRefDate] = useState(dayjs());
 
@@ -38,9 +47,7 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
   const gridColor = "#100d0615";
 
   const colors = {
-    sale: "#487d55",
-    expired: "#ef4444",
-    waste: "#f59e0b",
+    revenue: "#487d55",
   };
 
   const navigate = (direction: "next" | "prev") => {
@@ -49,79 +56,67 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
     );
   };
 
-  const currentWindowData = useMemo(() => {
+  const currentWindowTx = useMemo(() => {
     const start = refDate.startOf(mode);
     const end = refDate.endOf(mode);
-    const filteredLogs = logs.filter((l) =>
-      dayjs(l.created_at).isBetween(start, end, null, "[]")
-    );
-    const filteredTx = transactions.filter((t) =>
+    return transactions.filter((t) =>
       dayjs(t.created_at).isBetween(start, end, null, "[]")
     );
-    return { filteredLogs, filteredTx };
-  }, [logs, transactions, refDate, mode]);
+  }, [transactions, refDate, mode]);
 
   const insights = useMemo(() => {
-    const { filteredLogs, filteredTx } = currentWindowData;
+    // only sales linked to customers
+    const sales = currentWindowTx.filter(
+      (t) => t.type === "sale" && t.customer_id !== null
+    );
 
+    const totals: Record<number, number> = {};
     const counts: Record<number, number> = {};
-    filteredLogs
-      .filter((l) => l.reason === "sale")
-      .forEach((l) => {
-        counts[l.product_id] = (counts[l.product_id] || 0) + l.quantity;
-      });
+    const lastSale: Record<number, string> = {};
 
-    const sortedProductIds = Object.keys(counts).sort(
-      (a, b) => counts[Number(b)] - counts[Number(a)]
-    );
+    for (const t of sales) {
+      const cid = t.customer_id as number;
+      totals[cid] = (totals[cid] || 0) + t.amount;
+      counts[cid] = (counts[cid] || 0) + 1;
 
-    const topId = sortedProductIds[0] || "0";
-    const topProductMeta = products.find((p) => p.id === Number(topId));
+      const ts = dayjs(t.created_at).toISOString();
+      if (!lastSale[cid] || dayjs(ts).isAfter(dayjs(lastSale[cid]))) {
+        lastSale[cid] = ts;
+      }
+    }
 
-    // Calculate other products sold (excluding the top one)
-    const otherProducts = sortedProductIds.slice(1).map((id) => {
-      const product = products.find((p) => p.id === Number(id));
-      const qty = counts[Number(id)];
-      return {
-        ...product,
-        qty,
-        totalRevenue: qty * (product?.price || 0),
-      };
-    });
+    const rows: CustomerRow[] = Object.keys(totals)
+      .map((idStr) => {
+        const id = Number(idStr);
+        const c = customers.find((x) => x.id === id);
+        return {
+          id,
+          name: c?.name ?? `Customer #${id}`,
+          image: c?.image ?? null,
+          is_pinned: c?.is_pinned ?? 0,
+          total: totals[id] || 0,
+          saleCount: counts[id] || 0,
+          lastSaleAt: lastSale[id] || null,
+        };
+      })
+      .sort((a, b) => b.total - a.total);
 
-    const unitsSold = filteredLogs
-      .filter((l) => l.reason === "sale")
-      .reduce((s, c) => s + c.quantity, 0);
-    const wasteCount = filteredLogs
-      .filter((l) => l.reason === "waste" || l.reason === "expired")
-      .reduce((s, c) => s + c.quantity, 0);
+    const top = rows[0] ?? null;
+    const others = rows.slice(1);
 
-    const dateRev: Record<string, number> = {};
-    filteredTx
-      .filter((t) => t.type === "sale")
-      .forEach((t) => {
-        const d = dayjs(t.created_at).format("YYYY-MM-DD");
-        dateRev[d] = (dateRev[d] || 0) + t.amount;
-      });
-    const peakD = Object.keys(dateRev).reduce(
-      (a, b) => (dateRev[a] > dateRev[b] ? a : b),
-      ""
-    );
+    const totalRevenue = sales.reduce((s, t) => s + t.amount, 0);
 
-    return {
-      topProduct: topProductMeta || null,
-      topQty: counts[Number(topId)] || 0,
-      topRevenue: (counts[Number(topId)] || 0) * (topProductMeta?.price || 0),
-      otherProducts,
-      unitsSold,
-      wasteCount,
-      peakDate: peakD ? dayjs(peakD).format("DD MMM") : "N/A",
-    };
-  }, [currentWindowData, products]);
+    // Extra: also show "best pinned customer" if you want (optional)
+    const pinnedRows = rows.filter((r) => r.is_pinned === 1);
+    const topPinned = pinnedRows.length ? pinnedRows[0] : null;
+
+    return { top, others, totalRevenue, topPinned };
+  }, [currentWindowTx, customers]);
 
   const chartData = useMemo(() => {
     let intervals: { label: string; start: dayjs.Dayjs; end: dayjs.Dayjs }[] =
       [];
+
     if (mode === "year") {
       for (let m = 0; m < 12; m++) {
         const d = refDate.month(m);
@@ -156,23 +151,24 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
     }
 
     return intervals.map((interval) => {
-      const inPeriod = logs.filter((l) =>
-        dayjs(l.created_at).isBetween(interval.start, interval.end, null, "[]")
-      );
-      const getSum = (r: ReductionReason) =>
-        inPeriod
-          .filter((l) => l.reason === r)
-          .reduce((s, c) => s + c.quantity, 0);
+      const revenue = transactions
+        .filter((t) =>
+          dayjs(t.created_at).isBetween(
+            interval.start,
+            interval.end,
+            null,
+            "[]"
+          )
+        )
+        .filter((t) => t.type === "sale" && t.customer_id !== null)
+        .reduce((s, t) => s + t.amount, 0);
+
       return {
         label: interval.label,
-        stacks: [
-          { value: getSum("sale"), color: colors.sale },
-          { value: getSum("expired"), color: colors.expired },
-          { value: getSum("waste"), color: colors.waste },
-        ],
+        stacks: [{ value: revenue, color: colors.revenue }],
       };
     });
-  }, [logs, mode, refDate]);
+  }, [transactions, mode, refDate]);
 
   const displayTitle = useMemo(() => {
     if (mode === "year") return refDate.format("YYYY");
@@ -184,11 +180,13 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
+      {/* HEADER */}
       <View style={styles.header}>
         <View>
-          <ThemedText type="defaultSemiBold">Stock Analytics</ThemedText>
+          <ThemedText type="defaultSemiBold">Customer Analytics</ThemedText>
           <ThemedText style={styles.dateLabel}>{displayTitle}</ThemedText>
         </View>
+
         <View style={styles.toggle}>
           {(["week", "month", "year"] as ViewMode[]).map((v) => (
             <TouchableOpacity
@@ -198,9 +196,13 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
                 setRefDate(dayjs());
               }}
               style={[styles.toggleBtn, mode === v && styles.toggleBtnActive]}
+              activeOpacity={0.85}
             >
               <ThemedText
-                style={[styles.toggleText, mode === v && { color: "#fff" }]}
+                style={[
+                  styles.toggleText,
+                  mode === v && { color: "#fff", opacity: 1 },
+                ]}
               >
                 {v.toUpperCase()}
               </ThemedText>
@@ -209,140 +211,154 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
         </View>
       </View>
 
-      <View style={styles.chartBox}>
-        <BarChart
-          stackData={chartData}
-          height={180}
-          width={SCREEN_WIDTH - 80}
-          barWidth={mode === "year" ? 12 : 22}
-          spacing={mode === "year" ? 10 : 20}
-          initialSpacing={15}
-          noOfSections={4}
-          rulesColor={gridColor}
-          xAxisColor={gridColor}
-          yAxisThickness={0}
-          xAxisThickness={1}
-          yAxisTextStyle={{ color: textSub, fontSize: 10 }}
-          xAxisLabelTextStyle={{ color: textSub, fontSize: 9 }}
-          disablePress
-        />
-      </View>
-
+      {/* FOOTER NAV */}
       <View style={styles.footer}>
         <TouchableOpacity
           onPress={() => navigate("prev")}
           style={styles.navBtn}
+          activeOpacity={0.85}
         >
           <Ionicons name="chevron-back" size={20} color={iconColor} />
         </TouchableOpacity>
-        <View style={styles.legend}>
-          {Object.entries(colors).map(([key, color]) => (
-            <View key={key} style={styles.legendItem}>
-              <View style={[styles.dot, { backgroundColor: color }]} />
-              <ThemedText style={styles.legendText}>{key}</ThemedText>
-            </View>
-          ))}
-        </View>
+        <ThemedText style={styles.dateLabel}>{displayTitle}</ThemedText>
         <TouchableOpacity
           onPress={() => navigate("next")}
           style={styles.navBtn}
+          activeOpacity={0.85}
         >
           <Ionicons name="chevron-forward" size={20} color={iconColor} />
         </TouchableOpacity>
       </View>
 
+      {/* INSIGHTS */}
       <View style={styles.insightsGrid}>
-        {/* ROW 1: TOP PRODUCT */}
-        <View style={[styles.topProductCard, { backgroundColor: cardBg }]}>
+        {/* TOP CUSTOMER */}
+        <View style={[styles.topCard, { backgroundColor: cardBg }]}>
           <View style={styles.avatarContainer}>
-            {insights.topProduct?.image ? (
+            {insights.top?.image ? (
               <Image
-                source={{ uri: insights.topProduct.image }}
+                source={{ uri: insights.top.image }}
                 style={styles.avatar}
               />
             ) : (
-              <Ionicons name="cube-outline" size={24} color="#f59e0b" />
+              <Ionicons name="person-outline" size={24} color="#f59e0b" />
             )}
           </View>
+
           <View style={styles.topInfo}>
             <View style={styles.toprow}>
               <Ionicons name="star" size={10} color="#f59e0b" />
-              <ThemedText style={[styles.iLabel]}>TOP PRODUCT</ThemedText>
+              <ThemedText style={styles.iLabel}>TOP CUSTOMER</ThemedText>
+              {insights.top?.is_pinned === 1 ? (
+                <View style={styles.pill}>
+                  <Ionicons name="pin" size={10} color="#111" />
+                  <ThemedText style={styles.pillText}>Pinned</ThemedText>
+                </View>
+              ) : null}
             </View>
-            <ThemedText style={styles.productName} numberOfLines={1}>
-              {insights.topProduct?.title || "No Sales Data"}
+
+            <ThemedText style={styles.name} numberOfLines={1}>
+              {insights.top?.name || "No Sales Data"}
+            </ThemedText>
+
+            <ThemedText style={[styles.small, { color: textSub }]}>
+              {insights.top?.saleCount ? `${insights.top.saleCount} sales` : ""}
+              {insights.top?.lastSaleAt
+                ? ` · last ${dayjs(insights.top.lastSaleAt).format("DD MMM")}`
+                : ""}
             </ThemedText>
           </View>
+
           <View style={styles.topStats}>
-            <ThemedText style={styles.soldQty}>{insights.topQty}</ThemedText>
-            <ThemedText style={styles.iLabel}>
-              {CURRENCY_SYMBOL} {insights.topRevenue.toLocaleString()}
+            <ThemedText style={styles.money}>
+              {CURRENCY_SYMBOL}{" "}
+              {Number(insights.top?.total || 0).toLocaleString()}
             </ThemedText>
+            <ThemedText style={styles.iLabel}>revenue</ThemedText>
           </View>
         </View>
 
-        {/* ROW 2: SUMMARY STATS */}
+        {/* SUMMARY */}
         <View style={styles.statsRow}>
-          <InsightCard
-            label="Total Sold"
-            value={insights.unitsSold}
-            icon="cart"
-            color={colors.sale}
+          <SummaryCard
+            label="Total Revenue"
+            value={insights.totalRevenue}
+            color={colors.revenue}
             bg={cardBg}
+            icon="cash-outline"
           />
-          <InsightCard
-            label="Waste/Exp"
-            value={insights.wasteCount}
-            icon="trash"
-            color={colors.expired}
+          <SummaryCard
+            label="Customers"
+            value={(insights.top ? 1 : 0) + insights.others.length}
+            color={useThemeColor({}, "text")}
             bg={cardBg}
+            icon="people-outline"
+            isMoney={false}
           />
-          <InsightCard
-            label="Peak Date"
-            value={insights.peakDate}
-            icon="trending-up"
-            color="#3b82f6"
+          <SummaryCard
+            label="Top Pinned"
+            value={insights.topPinned?.total || 0}
+            color="#f59e0b"
             bg={cardBg}
+            icon="pin-outline"
           />
         </View>
 
-        {/* NEW SECTION: OTHER PRODUCTS SOLD */}
+        {/* OTHER CUSTOMERS */}
         <View style={styles.otherSection}>
-          <ThemedText style={styles.sectionTitle}>
-            Other Selling Products
-          </ThemedText>
-          {insights.otherProducts.length > 0 ? (
-            insights.otherProducts.map((prod, index) => (
+          <ThemedText style={styles.sectionTitle}>Other Customers</ThemedText>
+
+          {insights.others.length > 0 ? (
+            insights.others.map((c) => (
               <View
-                key={index}
-                style={[styles.otherProductCard, { backgroundColor: cardBg }]}
+                key={c.id}
+                style={[styles.rowCard, { backgroundColor: cardBg }]}
               >
-                <View style={styles.otherAvatarContainer}>
-                  {prod.image ? (
-                    <Image source={{ uri: prod.image }} style={styles.avatar} />
+                <View style={styles.rowAvatar}>
+                  {c.image ? (
+                    <Image source={{ uri: c.image }} style={styles.avatar} />
                   ) : (
-                    <Ionicons name="cube-outline" size={20} color={iconColor} />
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={22}
+                      color={iconColor}
+                    />
                   )}
                 </View>
-                <View style={styles.topInfo}>
-                  <ThemedText style={styles.otherProductName} numberOfLines={1}>
-                    {prod.title}
-                  </ThemedText>
+
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <ThemedText style={styles.rowName} numberOfLines={1}>
+                      {c.name}
+                    </ThemedText>
+                    {c.is_pinned === 1 ? (
+                      <Ionicons name="pin" size={12} color="#f59e0b" />
+                    ) : null}
+                  </View>
+
                   <ThemedText style={styles.iLabel}>
-                    {prod.qty} Units Sold
+                    {c.saleCount} sales
+                    {c.lastSaleAt
+                      ? ` · last ${dayjs(c.lastSaleAt).format("DD MMM")}`
+                      : ""}
                   </ThemedText>
                 </View>
-                <View style={styles.topStats}>
-                  <ThemedText style={styles.otherPriceText}>
-                    {CURRENCY_SYMBOL} {prod.totalRevenue?.toLocaleString()}
-                  </ThemedText>
-                </View>
+
+                <ThemedText style={styles.rowMoney}>
+                  {CURRENCY_SYMBOL} {c.total.toLocaleString()}
+                </ThemedText>
               </View>
             ))
           ) : (
             <View style={styles.emptyContainer}>
               <ThemedText style={styles.emptyText}>
-                No other products were sold
+                No other customers were found
               </ThemedText>
             </View>
           )}
@@ -352,7 +368,14 @@ const EnhancedStockDashboard = ({ logs, transactions, products }: Props) => {
   );
 };
 
-const InsightCard = ({ label, value, icon, color, bg }: any) => (
+const SummaryCard = ({
+  label,
+  value,
+  icon,
+  color,
+  bg,
+  isMoney = true,
+}: any) => (
   <View style={[styles.iCard, { backgroundColor: bg }]}>
     <View style={styles.iHeader}>
       <Ionicons name={icon} size={12} color={color} />
@@ -360,12 +383,18 @@ const InsightCard = ({ label, value, icon, color, bg }: any) => (
         {label}
       </ThemedText>
     </View>
-    <ThemedText style={[styles.iValue, { color }]}>{value}</ThemedText>
+
+    <ThemedText style={[styles.iValue, { color }]}>
+      {isMoney
+        ? `${CURRENCY_SYMBOL} ${Number(value || 0).toLocaleString()}`
+        : `${value}`}
+    </ThemedText>
   </View>
 );
 
 const styles = StyleSheet.create({
   container: { padding: 14, borderRadius: 28, marginVertical: 0 },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -373,6 +402,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   dateLabel: { fontSize: 12, opacity: 0.6 },
+
   toggle: {
     flexDirection: "row",
     backgroundColor: "#00000008",
@@ -382,12 +412,15 @@ const styles = StyleSheet.create({
   toggleBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   toggleBtnActive: { backgroundColor: "#487d55" },
   toggleText: { fontSize: 10, fontWeight: "bold", opacity: 0.6 },
+
   chartBox: { marginLeft: -15, marginBottom: 10 },
+
   footer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     marginBottom: 20,
+    gap: 24,
     paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: "#00000005",
@@ -404,9 +437,9 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
   legendText: { fontSize: 10, textTransform: "capitalize", opacity: 0.7 },
 
-  // Insights Grid
   insightsGrid: { gap: 10 },
-  topProductCard: {
+
+  topCard: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
@@ -418,16 +451,43 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: "#f59e0b15",
+    backgroundColor: "#00000005",
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
   },
   avatar: { width: "100%", height: "100%" },
+
   topInfo: { flex: 1 },
-  productName: { fontSize: 17, fontWeight: "bold" },
+  toprow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+
+  iLabel: {
+    fontSize: 9,
+    opacity: 0.5,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  name: { fontSize: 17, fontWeight: "bold" },
+  small: { fontSize: 11, marginTop: 2, opacity: 0.9 },
+
   topStats: { alignItems: "flex-end" },
-  soldQty: { fontSize: 20, fontWeight: "bold", color: "#487d55" },
+  money: { fontSize: 16, fontWeight: "bold", color: "#487d55" },
+
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#f59e0b30",
+  },
+  pillText: { fontSize: 9, lineHeight: 9, fontWeight: "700", opacity: 0.85 },
 
   statsRow: { flexDirection: "row", gap: 10 },
   iCard: { flex: 1, paddingTop: 4, paddingHorizontal: 14, borderRadius: 12 },
@@ -437,22 +497,9 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 6,
   },
-  toprow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: 4,
-  },
-  iLabel: {
-    fontSize: 9,
-    opacity: 0.5,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  iValue: { fontSize: 16, fontWeight: "bold", marginBottom: 12 },
+  iValue: { fontSize: 14, fontWeight: "bold", marginBottom: 12 },
 
-  // Other Products Section
-  otherSection: { marginTop: 10, gap: 8, paddingBottom: 120 },
+  otherSection: { marginTop: 10, gap: 8, paddingBottom: 60 },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "700",
@@ -460,14 +507,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     marginLeft: 4,
   },
-  otherProductCard: {
+
+  rowCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
     borderRadius: 12,
     gap: 12,
   },
-  otherAvatarContainer: {
+  rowAvatar: {
     width: 40,
     height: 40,
     borderRadius: 10,
@@ -476,10 +524,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
   },
-  otherProductName: { fontSize: 14, fontWeight: "600" },
-  otherPriceText: { fontSize: 14, fontWeight: "bold", opacity: 0.8 },
+  rowName: { fontSize: 14, fontWeight: "600" },
+  rowMoney: { fontSize: 14, fontWeight: "bold", opacity: 0.85 },
+
   emptyContainer: { padding: 20, alignItems: "center", opacity: 0.5 },
   emptyText: { fontSize: 12, fontStyle: "italic" },
 });
 
-export default EnhancedStockDashboard;
+export default EnhancedCustomerDashboard;

@@ -15,7 +15,7 @@ import BottomSheet from "@/components/ui/BottomSheet";
 import { GeneralAnalyticsChart } from "@/components/analytics";
 import { useTransactions } from "@/contexts/TransactionContext";
 import TransactionForm from "@/features/analytics/TransactionForm";
-import { StockImpactChart } from "@/features/analytics";
+import { CustomerImpactChart, StockImpactChart } from "@/features/analytics";
 import { useStock } from "@/contexts/StockContext";
 
 export type AnalyticsSection = "general" | "products" | "customers";
@@ -51,7 +51,7 @@ export default function AnalyticsScreen() {
   // Pulling controller and refresh function from context
   const { transactions, stockLogs, controller, refreshTransactions } =
     useTransactions();
-  const { products } = useStock();
+  const { products, customers } = useStock();
 
   const [activeTab, setActiveTab] = useState<AnalyticsSection>("general");
   const [sheetVisible, setSheetVisible] = useState<boolean>(false);
@@ -99,9 +99,10 @@ export default function AnalyticsScreen() {
         );
       case "customers":
         return (
-          <ThemedText style={styles.placeholder}>
-            Customer Insights Content
-          </ThemedText>
+          <CustomerImpactChart
+            transactions={transactions}
+            customers={customers}
+          />
         );
       default:
         return null;
