@@ -1,6 +1,6 @@
 // Leqa © 2025 Mithula Chanthuka
 
-import { ReductionReason } from "@/types/customer";
+import { Customer, ReductionReason } from "@/types/customer";
 import { Product, StockItem } from "@/types/stock";
 import { SQLiteDatabase } from "expo-sqlite";
 
@@ -309,6 +309,17 @@ export const stockController = (db: SQLiteDatabase) => {
       );
     },
 
+    getProductById: async (id: number): Promise<Product | null> => {
+      return await db.getFirstAsync<Product>(
+        `SELECT p.*, COALESCE(SUM(s.quantity), 0) AS total_stock 
+     FROM products p 
+     LEFT JOIN stock_items s ON p.id = s.product_id 
+     WHERE p.id = ?
+     GROUP BY p.id`,
+        [id]
+      );
+    },
+
     /**
      * Updates multiple fields at once
      * Usage: updateCustomerFields(1, { name: 'John', email: 'john@me.com' })
@@ -324,6 +335,13 @@ export const stockController = (db: SQLiteDatabase) => {
       return await db.runAsync(
         `UPDATE customers SET ${setClause} WHERE id = ?`,
         [...values, customerId]
+      );
+    },
+
+    getCustomerById: async (id: number): Promise<Customer | null> => {
+      return await db.getFirstAsync<Customer>(
+        `SELECT * FROM customers WHERE id = ?`,
+        [id]
       );
     },
 

@@ -19,9 +19,11 @@ import { CURRENCY_SYMBOL } from "@/utils/currency";
 const ProductInfoSection = ({
   product,
   onStock,
+  onSell,
 }: {
   product: Product;
   onStock: () => void;
+  onSell: () => void;
 }) => {
   const { controller, refreshProducts } = useStock();
 
@@ -206,6 +208,7 @@ const ProductInfoSection = ({
       {/* ACTIONS */}
       <View style={styles.actionRow}>
         <TouchableOpacity
+          onPress={onSell}
           style={[styles.primaryBtn, { backgroundColor: bgPrimary }]}
         >
           <Ionicons name="cart-outline" size={20} color="#fff" />

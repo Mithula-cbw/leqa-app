@@ -243,7 +243,7 @@ const RemoveStockSheet = ({ onFinish }: { onFinish: () => void }) => {
           disabled={stagedItems.length === 0}
         >
           <ThemedText style={styles.buttonText}>
-            Confirm & Process {stagedItems.length} Items
+            Confirm & Sell Items
           </ThemedText>
         </TouchableOpacity>
       </View>
