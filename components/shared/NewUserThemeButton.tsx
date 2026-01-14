@@ -24,7 +24,7 @@ const NewUserThemeButton = ({
 }: Props) => {
   const scale = useRef(new Animated.Value(1)).current;
   const textColor = useThemeColor({}, "text");
-  const tintColor = useThemeColor({}, "background-muted");
+  const tintColor = useThemeColor({}, "highlight");
 
   const handlePress = () => {
     Animated.sequence([

@@ -37,6 +37,7 @@ const ProductCard = ({ item }: { item: Product }) => {
   const cardBg = useThemeColor({}, "sheet");
   const bgSecondary = useThemeColor({}, "background-seconary");
   const iconColor = useThemeColor({}, "icon");
+  const primaryText = useThemeColor({}, "text-primary");
 
   const goToProduct = () => {
     router.push({
@@ -249,7 +250,7 @@ const ProductCard = ({ item }: { item: Product }) => {
                 item.total_stock <= 0 && { opacity: 0.3 },
               ]}
             >
-              <ThemedText style={styles.btnText}>-</ThemedText>
+              <ThemedText darkColor={primaryText} style={styles.btnText}>-</ThemedText>
             </TouchableOpacity>
 
             <View style={styles.stockCount}>
@@ -261,7 +262,7 @@ const ProductCard = ({ item }: { item: Product }) => {
               disabled={processing}
               style={[styles.btn, styles.addBtn]}
             >
-              <ThemedText style={styles.btnText}>+</ThemedText>
+              <ThemedText darkColor={primaryText} style={styles.btnText}>+</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
@@ -363,8 +364,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 3,
   },
-  addBtn: { backgroundColor: "#e7f3ef" },
-  reduceBtn: { backgroundColor: "#fff3cd" },
+  addBtn: { backgroundColor: "#aef7de" },
+  reduceBtn: { backgroundColor: "#f3e0a2" },
   btnText: { fontSize: 18, fontWeight: "600" },
   caretBtn: {
     marginTop: 6,

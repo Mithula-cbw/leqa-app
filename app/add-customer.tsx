@@ -23,6 +23,8 @@ export default function AddCustomerScreen() {
   const bgSecondary = useThemeColor({}, "background-seconary");
   const tint = useThemeColor({}, "background-muted");
   const iconMuted = useThemeColor({}, "icon");
+  const text = useThemeColor({}, "text");
+  const textSub = useThemeColor({}, "text-subtitle");
 
   const [form, setForm] = useState({
     name: "",
@@ -109,8 +111,9 @@ export default function AddCustomerScreen() {
         <View style={styles.inputGroup}>
           <ThemedText style={styles.label}>Full Name</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: bgSecondary }]}
+            style={[styles.input, { backgroundColor: bgSecondary, color: text  }]}
             placeholder="e.g. Mithula Chanthuka"
+            placeholderTextColor={textSub}
             value={form.name}
             onChangeText={(t) => setForm({ ...form, name: t })}
           />
@@ -119,8 +122,9 @@ export default function AddCustomerScreen() {
         <View style={styles.inputGroup}>
           <ThemedText style={styles.label}>Phone Number</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: bgSecondary }]}
+            style={[styles.input, { backgroundColor: bgSecondary, color: text  }]}
             placeholder="07X XXX XXXX"
+            placeholderTextColor={textSub}
             keyboardType="phone-pad"
             value={form.phone}
             onChangeText={(t) => setForm({ ...form, phone: t })}
@@ -130,8 +134,9 @@ export default function AddCustomerScreen() {
         <View style={styles.inputGroup}>
           <ThemedText style={styles.label}>Email Address (Optional)</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: bgSecondary }]}
+            style={[styles.input, { backgroundColor: bgSecondary, color: text  }]}
             placeholder="customer@email.com"
+            placeholderTextColor={textSub}
             keyboardType="email-address"
             autoCapitalize="none"
             value={form.email}

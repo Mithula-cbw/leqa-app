@@ -8,9 +8,9 @@ type Props = {
 };
 
 export default function FloatingActionButtons({ onAdd, onRemove }: Props) {
-  const textColorAdd = useThemeColor({}, "text");
-  const textColorRemove = useThemeColor({}, "tabIconDefault");
-  const bgMuted = useThemeColor({}, "background-muted");
+  const textColorAdd = useThemeColor({}, "text-primary");
+  const textColorRemove = useThemeColor({}, "text");
+  const bgMuted = useThemeColor({}, "background");
   const accent = useThemeColor({}, "accent");
 
   return (

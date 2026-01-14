@@ -15,10 +15,10 @@ const Products = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("products");
   const router = useRouter();
 
-  const tabsBg = useThemeColor({}, "background-seconary");
-  const activeBg = useThemeColor({}, "background");
+  const tabsBg = useThemeColor({}, "background");
+  const activeBg = useThemeColor({}, "background-seconary");
   const accent = useThemeColor({}, "accent");
-  const textColorAdd = useThemeColor({}, "text");
+  const textColorAdd = useThemeColor({}, "text-primary");
 
   const onAdd = () => {
     if (activeTab === "products") {
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
 
   tab: {
     flex: 1,
-    paddingVertical: 5,
+    paddingVertical: 10,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     alignItems: "center",

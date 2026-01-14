@@ -15,6 +15,7 @@ interface UserContextType {
   saveUser: (name: string, image?: string | null) => Promise<void>;
   deleteUser: () => Promise<void>;
   updateProfilePicture: (image: string) => Promise<void>;
+  updateUserName: (name: string) => Promise<void>; // ✅ added
   loading: boolean;
 }
 
@@ -57,10 +58,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const deleteUser = async () => {
     try {
       await db.runAsync("DELETE FROM users");
-
       setUser(null);
-
-      console.log("User data cleared successfully");
     } catch (error) {
       console.error("Error deleting user:", error);
     }
@@ -81,9 +79,35 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ New: update only name (does NOT delete/recreate)
+  const updateUserName = async (name: string) => {
+    if (!user || user.id === undefined) return;
+
+    const trimmed = (name ?? "").trim();
+    if (!trimmed) return;
+
+    try {
+      await db.runAsync("UPDATE users SET name = ? WHERE id = ?", [
+        trimmed,
+        user.id,
+      ]);
+
+      setUser((prev) => (prev ? { ...prev, name: trimmed } : null));
+    } catch (error) {
+      console.error("Error updating user name:", error);
+    }
+  };
+
   return (
     <UserContext.Provider
-      value={{ user, saveUser, deleteUser, updateProfilePicture, loading }}
+      value={{
+        user,
+        saveUser,
+        deleteUser,
+        updateProfilePicture,
+        updateUserName,
+        loading,
+      }}
     >
       {children}
     </UserContext.Provider>

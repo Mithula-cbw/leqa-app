@@ -24,6 +24,8 @@ export default function AddProductScreen() {
   const { controller, refreshProducts } = useStock();
   const bgSecondary = useThemeColor({}, "background-seconary");
   const tint = useThemeColor({}, "background-muted");
+  const text = useThemeColor({}, "text");
+  const textSub = useThemeColor({}, "text-subtitle")
 
   const [form, setForm] = useState({
     title: "",
@@ -184,8 +186,9 @@ export default function AddProductScreen() {
         <View style={styles.inputGroup}>
           <ThemedText style={styles.label}>Product Name</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: bgSecondary }]}
+            style={[styles.input, { backgroundColor: bgSecondary, color: text }]}
             placeholder="e.g. Fresh Milk"
+            placeholderTextColor={textSub}
             value={form.title}
             onChangeText={(t) => setForm({ ...form, title: t })}
           />
@@ -198,8 +201,9 @@ export default function AddProductScreen() {
               style={styles.label}
             >{`Price ${CURRENCY_SYMBOL}`}</ThemedText>
             <TextInput
-              style={[styles.input, { backgroundColor: bgSecondary }]}
+              style={[styles.input, { backgroundColor: bgSecondary, color: text }]}
               keyboardType="decimal-pad"
+              placeholderTextColor={textSub}
               value={form.price}
               placeholder="0.00"
               onChangeText={(t) => setForm({ ...form, price: t })}
@@ -209,8 +213,9 @@ export default function AddProductScreen() {
           <View style={{ flex: 1 }}>
             <ThemedText style={styles.label}>Initial Stock</ThemedText>
             <TextInput
-              style={[styles.input, { backgroundColor: bgSecondary }]}
+              style={[styles.input, { backgroundColor: bgSecondary, color: text }]}
               keyboardType="number-pad"
+              placeholderTextColor={textSub}
               value={form.initialStock}
               placeholder="Qty"
               onChangeText={(t) =>
@@ -223,11 +228,12 @@ export default function AddProductScreen() {
         {/* WEIGHT ROW */}
         <View style={styles.inputGroup}>
           <ThemedText style={styles.label}>Weight</ThemedText>
-          <View style={[styles.inputRow, { backgroundColor: bgSecondary }]}>
+          <View style={[styles.inputRow, { backgroundColor: bgSecondary}]}>
             <TextInput
-              style={styles.flexInput}
+              style={[styles.flexInput, { color: text }]}
               keyboardType="numeric"
               placeholder="000"
+              placeholderTextColor={textSub}
               value={form.weight_value === 0 ? "" : String(form.weight_value)}
               onChangeText={(t) =>
                 setForm({ ...form, weight_value: parseFloat(t) || 0 })
